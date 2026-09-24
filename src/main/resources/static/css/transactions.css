@@ -1,0 +1,27 @@
+:root { font-family: "Yu Gothic", "Meiryo", sans-serif; color: #243c37; background: #f4f7f5; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 1180px; margin: 0 auto; padding: 40px 24px; }
+.brand { color: #17694e; font-weight: bold; }
+h1 { margin: 20px 0 12px; font-size: 2rem; }
+header { margin-bottom: 32px; }
+header p, .note { line-height: 1.8; }
+.table-container { overflow-x: auto; background: white; border: 1px solid #d3dfd8; border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+caption { padding: 16px 20px; text-align: left; color: #50645d; font-size: .9rem; }
+thead { background: #e8f0eb; }
+th, td { padding: 18px; border-bottom: 1px solid #e2e9e5; }
+thead th { white-space: nowrap; }
+tbody tr:last-child > * { border-bottom: 0; }
+.item-name { min-width: 160px; overflow-wrap: anywhere; }
+.amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.profit { color: #17694e; font-weight: bold; }
+.negative { color: #ac2929; }
+.photo, .no-photo { width: 80px; height: 80px; border-radius: 8px; }
+.photo { object-fit: cover; display: block; }
+.no-photo { display: flex; align-items: center; justify-content: center; background: #edf1ef; color: #596b63; font-size: .8rem; }
+.empty { padding: 48px 24px; background: white; border: 1px solid #d3dfd8; border-radius: 12px; text-align: center; }
+.empty h2 { font-size: 1.25rem; }
+.note { font-size: .9rem; color: #50645d; }
+.error { background: #fff0ee; color: #912a20; padding: 20px; border-radius: 8px; }
+@media (max-width: 600px) { main { padding: 24px 16px; } th, td { padding: 12px; } h1 { font-size: 1.6rem; } }
