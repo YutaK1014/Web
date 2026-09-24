@@ -4,6 +4,7 @@ import com.example.cashflow.controller.TransactionController;
 import com.example.cashflow.entity.Transaction;
 import com.example.cashflow.repository.TransactionRepository;
 import com.example.cashflow.service.TransactionService;
+import com.example.cashflow.service.PhotoStorage;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
@@ -29,8 +30,8 @@ class TransactionListTests {
 
     @Test
     void calculatesProfitAndHandlesMissingPurchasePrice() {
-        assertEquals(700, transaction(null, null).getProfit());
-        assertEquals(-300, transaction(1000, null).getProfit());
+        assertEquals(800, transaction(null, null).getProfit());
+        assertEquals(-200, transaction(1000, null).getProfit());
         assertEquals("地域のフリマ", transaction(null, null).getPlatformName());
     }
 
@@ -61,8 +62,8 @@ class TransactionListTests {
         context.setVariable("transactions", List.of(transaction(null, null), transaction(1000, "/images/item-1.jpg")));
         String html = engine.process("transactions", context);
         assertTrue(html.contains("&lt;script&gt;商品&lt;/script&gt;"));
-        assertTrue(html.contains("700円"));
-        assertTrue(html.contains("-300円"));
+        assertTrue(html.contains("800円"));
+        assertTrue(html.contains("-200円"));
         assertTrue(html.contains("地域のフリマ"));
         assertTrue(html.contains("写真なし"));
         assertTrue(html.contains("src=\"/images/item-1.jpg\""));
@@ -82,7 +83,7 @@ class TransactionListTests {
     @Test
     void loadsTransactionsAndReportsDatabaseFailure() {
         TransactionRepository repository = mock(TransactionRepository.class);
-        TransactionController controller = new TransactionController(new TransactionService(repository));
+        TransactionController controller = new TransactionController(new TransactionService(repository, mock(PhotoStorage.class)));
         ExtendedModelMap model = new ExtendedModelMap();
         MockHttpServletResponse response = new MockHttpServletResponse();
         List<Transaction> rows = List.of(transaction(null, null));

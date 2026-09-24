@@ -16,7 +16,7 @@ public record Transaction(
         String imagePath) {
 
     public long getProfit() {
-        return (long) sellingPrice - sellingFee - shippingCost
+        return (long) sellingPrice - shippingCost
                 - (purchasePrice == null ? 0 : purchasePrice);
     }
 

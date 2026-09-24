@@ -4,6 +4,7 @@ import com.example.cashflow.entity.Transaction;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Insert;
 
 @Mapper
 public interface TransactionRepository {
@@ -19,4 +20,13 @@ public interface TransactionRepository {
             ORDER BY sold_date DESC, id DESC
             """)
     List<Transaction> findAll();
+
+    @Insert("""
+            INSERT INTO transactions (item_name, marketplace, custom_marketplace,
+                selling_price, fee_rate, selling_fee, shipping_cost, purchase_price,
+                profit, sold_date, image_path)
+            VALUES (#{itemName}, #{marketplace}, #{customMarketplace}, #{sellingPrice},
+                0, 0, #{shippingCost}, #{purchasePrice}, #{profit}, #{soldDate}, #{imagePath})
+            """)
+    void insert(Transaction transaction);
 }

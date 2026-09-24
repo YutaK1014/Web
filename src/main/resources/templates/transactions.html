@@ -12,7 +12,9 @@
         <p class="brand">もうけメモ</p>
         <h1>取引一覧</h1>
         <p>売れた商品の価格や送料、利益を確認できます。</p>
+        <a class="button" th:href="@{/transactions/new}">取引を新規登録</a>
     </header>
+    <p class="success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
     <p class="error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></p>
     <section class="empty" th:if="${errorMessage == null and #lists.isEmpty(transactions)}">
         <h2>取引はまだありません</h2>
@@ -49,7 +51,7 @@
             </tbody>
         </table>
     </div>
-    <p class="note">利益は、価格から販売手数料・送料・仕入価格を差し引いた金額です。</p>
+    <p class="note">利益は、価格から送料と仕入れ価格を差し引いた金額です。仕入れ価格が未入力の場合は0円で計算します。</p>
 </main>
 </body>
 </html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>取引の新規登録 | もうけメモ</title>
+    <link rel="stylesheet" th:href="@{/css/transactions.css}">
+    <script defer th:src="@{/js/transaction-form.js}"></script>
+</head>
+<body>
+<main class="form-page">
+    <header>
+        <p class="brand">もうけメモ</p>
+        <a th:href="@{/transactions}">← 取引一覧に戻る</a>
+        <h1>取引の新規登録</h1>
+        <p>売れた商品の情報を入力してください。「必須」の項目は入力が必要です。</p>
+    </header>
+    <p class="error" role="alert" th:if="${uploadError}" th:text="${uploadError}"></p>
+    <form class="transaction-form" method="post" th:action="@{/transactions}" th:object="${form}" enctype="multipart/form-data">
+        <input type="hidden" name="token" th:value="${token}">
+        <div class="error" role="alert" th:if="${#fields.hasAnyErrors()}">
+            <p>登録できませんでした。以下の内容を確認してください。写真を選んでいた場合は、もう一度選択してください。</p>
+            <ul><li th:each="error : ${#fields.allErrors()}" th:text="${error}"></li></ul>
+        </div>
+        <div class="field">
+            <label for="photo">写真 <span class="optional">任意</span></label>
+            <input type="file" id="photo" name="photo" accept="image/jpeg,image/png" aria-describedby="photo-help photo-error">
+            <p id="photo-help" class="hint">1枚・JPEG / PNG形式・5MB以下。写真なしでも登録できます。</p>
+            <p id="photo-error" class="field-error" role="alert"></p>
+            <img id="photo-preview" class="photo-preview" alt="選択した商品写真" hidden>
+        </div>
+        <div class="field">
+            <label for="itemName">商品名 <span class="required">必須</span></label>
+            <input type="text" th:field="*{itemName}" maxlength="100" required placeholder="例：白いスニーカー">
+        </div>
+        <div class="amount-fields">
+            <div class="field">
+                <label for="sellingPrice">価格（円） <span class="required">必須</span></label>
+                <input type="number" th:field="*{sellingPrice}" min="0" max="1000000000" step="1" inputmode="numeric" required placeholder="例：3000">
+            </div>
+            <div class="field">
+                <label for="purchasePrice">仕入れ価格（円） <span class="optional">任意</span></label>
+                <input type="number" th:field="*{purchasePrice}" min="0" max="1000000000" step="1" inputmode="numeric" placeholder="未入力なら0円" aria-describedby="purchase-help">
+                <p class="hint" id="purchase-help">商品を仕入れたときに支払った金額です。</p>
+            </div>
+            <div class="field">
+                <label for="shippingCost">送料（円） <span class="required">必須</span></label>
+                <input type="number" th:field="*{shippingCost}" min="0" max="1000000000" step="1" inputmode="numeric" required placeholder="例：750">
+            </div>
+        </div>
+        <div class="field">
+            <label for="marketplace">取引プラットフォーム <span class="required">必須</span></label>
+            <p class="hint">商品を販売したサービスを選択してください。</p>
+            <select th:field="*{marketplace}" required>
+                <option value="">選択してください</option>
+                <option th:each="platform : ${platforms}" th:value="${platform}" th:text="${platform}"></option>
+            </select>
+        </div>
+        <div class="field" id="custom-platform-field">
+            <label for="customMarketplace">その他のサービス名 <span class="optional">任意</span></label>
+            <input type="text" th:field="*{customMarketplace}" maxlength="100" placeholder="「その他」を選んだ場合に入力できます">
+        </div>
+        <div class="profit-preview">
+            <span>利益（自動計算）</span>
+            <output id="profit" for="sellingPrice shippingCost purchasePrice" aria-live="polite">— 円</output>
+            <p class="hint">価格 − 送料 − 仕入れ価格（未入力なら0円）</p>
+        </div>
+        <div class="form-actions">
+            <button class="button" type="submit">登録する</button>
+            <a th:href="@{/transactions}">一覧に戻る</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>
