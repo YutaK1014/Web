@@ -1,0 +1,14 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: pf-mysql
+    environment:
+      MYSQL_DATABASE: cashflow
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - pf-db-data:/var/lib/mysql
+volumes:
+  pf-db-data:
+    name: pf-db-data
