@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head}"></head>
+<body><main class="form-page"><nav th:replace="~{fragments :: nav}"></nav>
+<h1>取引の削除確認</h1><p><strong th:text="${transaction.itemName}"></strong>を削除しますか？</p>
+<p>この取引と商品画像を削除します。削除後は元に戻せません。</p>
+<p>販売日：<span th:text="${transaction.soldDate}"></span> ／ 販売価格：<span th:text="${transaction.sellingPrice + '円'}"></span></p>
+<form method="post" th:action="@{/transactions/{id}/delete(id=${transaction.id})}">
+<input type="hidden" name="token" th:value="${token}"><div class="form-actions"><button class="button danger" type="submit">削除する</button><a th:href="@{/transactions}">キャンセル</a></div></form>
+</main></body></html>

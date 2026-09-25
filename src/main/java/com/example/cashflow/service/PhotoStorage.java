@@ -28,12 +28,12 @@ public class PhotoStorage {
         BufferedImage decoded;
         try (var input = photo.getInputStream(); ImageInputStream stream = ImageIO.createImageInputStream(input)) {
             var readers = ImageIO.getImageReaders(stream);
-            if (!readers.hasNext()) throw new IllegalArgumentException("写真はJPEGまたはPNG形式を選択してください。");
+            if (!readers.hasNext()) throw new IllegalArgumentException("写真はJPEG・PNG・WebP形式を選択してください。");
             ImageReader reader = readers.next();
             try {
                 String format = reader.getFormatName();
-                if (!"JPEG".equalsIgnoreCase(format) && !"PNG".equalsIgnoreCase(format)) {
-                    throw new IllegalArgumentException("写真はJPEGまたはPNG形式を選択してください。");
+                if (!"JPEG".equalsIgnoreCase(format) && !"PNG".equalsIgnoreCase(format) && !"WebP".equalsIgnoreCase(format)) {
+                    throw new IllegalArgumentException("写真はJPEG・PNG・WebP形式を選択してください。");
                 }
                 reader.setInput(stream);
                 if ((long) reader.getWidth(0) * reader.getHeight(0) > 20_000_000) {
@@ -58,7 +58,7 @@ public class PhotoStorage {
     }
 
     public void delete(String imagePath) throws IOException {
-        if (imagePath != null && imagePath.matches("/images/[a-f0-9-]+\\.png")) {
+        if (imagePath != null && imagePath.matches("/images/[a-zA-Z0-9_-]+\\.(?i:jpg|jpeg|png|webp)")) {
             Files.deleteIfExists(directory.resolve(imagePath.substring("/images/".length())));
         }
     }

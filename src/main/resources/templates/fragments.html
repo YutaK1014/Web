@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>もうけメモ | 売った利益が、すぐわかる。</title>
+<link rel="stylesheet" th:href="@{/css/transactions.css}">
+<script defer th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav th:fragment="nav" aria-label="メインメニュー" class="navigation">
+<a class="brand" th:href="@{/}">もうけメモ</a>
+<a th:href="@{/dashboard}">ダッシュボード</a><a th:href="@{/transactions}">取引一覧</a>
+<a th:href="@{/transactions/new}">取引登録</a><a th:href="@{/reports}">収支レポート</a>
+<a th:href="@{/settings}">設定</a><button id="theme-toggle" type="button" aria-pressed="false">ダークモード</button>
+</nav>
+<section th:fragment="summary(summary)" class="summary-grid" aria-label="収支合計">
+<div><span>売上</span><strong th:text="${#numbers.formatInteger(summary.sales,1,'COMMA') + '円'}"></strong></div>
+<div><span>利益</span><strong th:classappend="${summary.profit < 0} ? 'negative'" th:text="${#numbers.formatInteger(summary.profit,1,'COMMA') + '円'}"></strong></div>
+<div><span>送料</span><strong th:text="${#numbers.formatInteger(summary.shipping,1,'COMMA') + '円'}"></strong></div>
+<div><span>販売手数料</span><strong th:text="${#numbers.formatInteger(summary.fees,1,'COMMA') + '円'}"></strong></div>
+<div><span>仕入価格</span><strong th:text="${#numbers.formatInteger(summary.purchases,1,'COMMA') + '円'}"></strong></div>
+<div><span>取引件数</span><strong th:text="${summary.count + '件'}"></strong></div>
+</section>
+<div th:fragment="groups(groups,caption)" class="table-container" tabindex="0">
+<table><caption th:text="${caption}"></caption>
+<thead><tr><th>区分</th><th>売上</th><th>利益</th><th>送料</th><th>販売手数料</th><th>仕入価格</th><th>件数</th></tr></thead>
+<tbody><tr th:each="group : ${groups}"><th scope="row" th:text="${group.label}"></th>
+<td class="amount" th:text="${#numbers.formatInteger(group.summary.sales,1,'COMMA') + '円'}"></td>
+<td class="amount" th:classappend="${group.summary.profit < 0} ? 'negative'" th:text="${#numbers.formatInteger(group.summary.profit,1,'COMMA') + '円'}"></td>
+<td class="amount" th:text="${#numbers.formatInteger(group.summary.shipping,1,'COMMA') + '円'}"></td>
+<td class="amount" th:text="${#numbers.formatInteger(group.summary.fees,1,'COMMA') + '円'}"></td>
+<td class="amount" th:text="${#numbers.formatInteger(group.summary.purchases,1,'COMMA') + '円'}"></td>
+<td class="amount" th:text="${group.summary.count}"></td></tr></tbody></table>
+<p th:if="${#lists.isEmpty(groups)}" class="hint">対象の取引はありません。</p></div>
+<section th:fragment="chart(chart)" class="chart" aria-label="月別利益グラフ">
+<p class="hint">棒の長さは利益・損失の大きさです。赤は赤字を表します。</p>
+<div class="chart-row" th:each="bar : ${chart}">
+<span th:text="${bar.label}"></span><div class="bar-track"><div class="bar" th:classappend="${bar.profit < 0} ? 'loss'"
+th:style="'width:' + ${bar.width} + '%'" aria-hidden="true"></div></div>
+<strong th:classappend="${bar.profit < 0} ? 'negative'" th:text="${#numbers.formatInteger(bar.profit,1,'COMMA') + '円'}"></strong>
+</div></section>
+</body></html>

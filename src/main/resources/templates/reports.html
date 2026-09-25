@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head}"></head>
+<body><main class=""><nav th:replace="~{fragments :: nav}"></nav>
+<h1>収支レポート</h1>
+<form class="filters" method="get" th:action="@{/reports}"><label for="year">集計する年</label><input type="number" name="year" id="year" min="1000" max="9999" th:value="${year}" required><button class="button" type="submit">表示する</button></form>
+<h2 th:text="${year + '年の収支'}"></h2><section th:replace="~{fragments :: summary(${summary})}"></section>
+<h2>月別利益グラフ</h2><section th:replace="~{fragments :: chart(${chart})}"></section>
+<h2>月別集計</h2><div th:replace="~{fragments :: groups(${monthly}, '選択した年の月別収支')}"></div>
+<h2>サイト別集計</h2><div th:replace="~{fragments :: groups(${marketplaces}, '選択した年のサイト別収支')}"></div>
+<h2>年間集計</h2><div th:replace="~{fragments :: groups(${yearly}, 'すべての年の年間収支')}"></div>
+</main></body></html>

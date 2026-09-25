@@ -1,57 +1,34 @@
 <!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>取引一覧 | もうけメモ</title>
-    <link rel="stylesheet" th:href="@{/css/transactions.css}">
-</head>
-<body>
-<main>
-    <header>
-        <p class="brand">もうけメモ</p>
-        <h1>取引一覧</h1>
-        <p>売れた商品の価格や送料、利益を確認できます。</p>
-        <a class="button" th:href="@{/transactions/new}">取引を新規登録</a>
-    </header>
-    <p class="success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
-    <p class="error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></p>
-    <section class="empty" th:if="${errorMessage == null and #lists.isEmpty(transactions)}">
-        <h2>取引はまだありません</h2>
-        <p>取引データが登録されると、ここに一覧が表示されます。</p>
-    </section>
-    <div class="table-container" tabindex="0" role="region" aria-label="取引一覧。横にスクロールできます。"
-         th:if="${not #lists.isEmpty(transactions)}">
-        <table>
-            <caption>販売日が新しい順に表示しています。</caption>
-            <thead>
-            <tr>
-                <th scope="col">写真</th>
-                <th scope="col">商品名</th>
-                <th scope="col" class="amount">価格</th>
-                <th scope="col" class="amount">送料</th>
-                <th scope="col" class="amount">利益</th>
-                <th scope="col">取引プラットフォーム</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="transaction : ${transactions}">
-                <td>
-                    <img class="photo" th:if="${transaction.photoUrl != null}"
-                         th:src="@{${transaction.photoUrl}}" th:alt="${transaction.itemName + 'の写真'}" loading="lazy">
-                    <span class="no-photo" th:if="${transaction.photoUrl == null}">写真なし</span>
-                </td>
-                <th scope="row" class="item-name" th:text="${transaction.itemName}"></th>
-                <td class="amount" th:text="${#numbers.formatInteger(transaction.sellingPrice, 1, 'COMMA') + '円'}"></td>
-                <td class="amount" th:text="${#numbers.formatInteger(transaction.shippingCost, 1, 'COMMA') + '円'}"></td>
-                <td class="amount profit" th:classappend="${transaction.profit < 0} ? 'negative' : ''"
-                    th:text="${#numbers.formatInteger(transaction.profit, 1, 'COMMA') + '円'}"></td>
-                <td th:text="${transaction.platformName}"></td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
-    <p class="note">利益は、価格から送料と仕入れ価格を差し引いた金額です。仕入れ価格が未入力の場合は0円で計算します。</p>
-</main>
-</body>
-</html>
+<head th:replace="~{fragments :: head}"></head>
+<body><main class=""><nav th:replace="~{fragments :: nav}"></nav>
+<header><h1>取引一覧</h1><a class="button" th:href="@{/transactions/new}">取引を新規登録</a></header>
+<p class="success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
+<form class="filters" method="get" th:action="@{/transactions}" th:object="${filter}">
+<div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
+<div class="filter-grid">
+<label>商品名<input type="search" th:field="*{keyword}" maxlength="100"></label>
+<label>フリマサイト<select th:field="*{marketplace}"><option value="">すべて</option><option th:each="platform : ${platforms}" th:value="${platform}" th:text="${platform}"></option><option value="ヤフーオークション">ヤフーオークション（旧データ）</option></select></label>
+<label>販売月<input type="month" th:field="*{month}"></label>
+<label>開始日<input type="date" th:field="*{from}" min="1000-01-01" max="9999-12-31"></label>
+<label>終了日<input type="date" th:field="*{to}" min="1000-01-01" max="9999-12-31"></label></div>
+<div class="form-actions"><button class="button" type="submit">検索・絞り込み</button><a th:href="@{/transactions}">条件をクリア</a>
+<button type="submit" th:formaction="@{/transactions/export}">CSV出力</button></div>
+</form>
+<h2>表示中の取引の合計</h2><section th:replace="~{fragments :: summary(${summary})}"></section>
+<section class="empty" th:if="${#lists.isEmpty(transactions)}"><h2>該当する取引はありません</h2><p>新規登録するか、検索条件を変更してください。</p></section>
+<div class="table-container" tabindex="0" role="region" aria-label="取引一覧" th:if="${not #lists.isEmpty(transactions)}">
+<table><caption>販売日が新しい順に表示しています。</caption>
+<thead><tr><th>写真</th><th>商品名</th><th>サイト</th><th>販売価格</th><th>販売手数料</th><th>送料</th><th>利益</th><th>販売日</th><th>操作</th></tr></thead>
+<tbody><tr th:each="transaction : ${transactions}">
+<td><img class="photo" th:if="${transaction.photoUrl != null}" th:src="@{${transaction.photoUrl}}" th:alt="${transaction.itemName + 'の写真'}" loading="lazy"><span class="no-photo" th:if="${transaction.photoUrl == null}">写真なし</span></td>
+<th scope="row" class="item-name" th:text="${transaction.itemName}"></th><td th:text="${transaction.platformName}"></td>
+<td class="amount" th:text="${#numbers.formatInteger(transaction.sellingPrice,1,'COMMA') + '円'}"></td>
+<td class="amount" th:text="${#numbers.formatInteger(transaction.sellingFee,1,'COMMA') + '円'}"></td>
+<td class="amount" th:text="${#numbers.formatInteger(transaction.shippingCost,1,'COMMA') + '円'}"></td>
+<td class="amount profit" th:classappend="${transaction.profit < 0} ? 'negative'" th:text="${#numbers.formatInteger(transaction.profit,1,'COMMA') + '円'}"></td>
+<td class="nowrap" th:text="${transaction.soldDate}"></td>
+<td class="nowrap"><a th:href="@{/transactions/{id}/edit(id=${transaction.id})}">編集</a> <a th:href="@{/transactions/{id}/delete(id=${transaction.id})}">削除</a></td>
+</tr></tbody></table></div>
+<p class="note">利益 = 販売価格 − 販売手数料 − 送料 − 仕入価格。仕入価格が未入力の場合は0円です。</p>
+</main></body></html>

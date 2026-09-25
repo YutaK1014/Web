@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head}"></head>
+<body><main class="form-page"><nav th:replace="~{fragments :: nav}"></nav>
+<h1>設定</h1><p class="success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
+<form class="transaction-form" method="post" th:action="@{/settings}" th:object="${settings}">
+<input type="hidden" name="token" th:value="${token}">
+<div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
+<h2>販売手数料</h2><p>ご利用のサイト・契約条件に合わせて設定してください。登録・編集時に、この設定から手数料を自動計算します。</p>
+<div class="field"><label for="mercari">メルカリ（%）</label><input type="number" th:field="*{mercari}" min="0" max="100" step="0.01" required></div>
+<div class="field"><label for="rakuma">ラクマ（%）</label><input type="number" th:field="*{rakuma}" min="0" max="100" step="0.01" required></div>
+<div class="field"><label for="yahoo">Yahoo!フリマ（%）</label><input type="number" th:field="*{yahoo}" min="0" max="100" step="0.01" required></div>
+<div class="field"><label for="rounding">手数料の1円未満の端数処理</label><select th:field="*{rounding}" required><option value="">選択してください</option><option value="DOWN">切り捨て</option><option value="HALF_UP">四捨五入</option><option value="UP">切り上げ</option></select></div>
+<p class="hint">保存済み取引は自動変更しません。取引を編集して保存すると現在の設定で再計算します。</p>
+<h2>利益目標</h2><div class="field"><label for="monthlyGoal">月間利益目標（円・任意）</label><input type="number" th:field="*{monthlyGoal}" min="0" max="1000000000" step="1" placeholder="未入力なら設定なし"></div>
+<button class="button" type="submit">設定を保存する</button></form>
+</main></body></html>

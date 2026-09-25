@@ -1,5 +1,5 @@
 -- ログインなしのローカル利用。既存のmarker・取引データは変更しません。
-USE cashflow;
+
 
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
