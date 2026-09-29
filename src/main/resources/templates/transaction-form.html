@@ -7,7 +7,6 @@
 <p class="error" role="alert" th:if="${uploadError}" th:text="${uploadError}"></p>
 <form class="transaction-form" method="post" th:action="${transactionId == null} ? @{/transactions} : @{/transactions/{id}/edit(id=${transactionId})}"
 th:object="${form}" enctype="multipart/form-data" th:attr="data-rounding=${rounding}">
-<input type="hidden" name="token" th:value="${token}">
 <div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p>入力を確認してください。写真を選択した場合は選び直してください。</p><ul><li th:each="error : ${#fields.allErrors()}" th:text="${error}"></li></ul></div>
 <div class="field"><label for="photo">商品画像 <span class="optional">任意</span></label>
 <img th:if="${existingPhoto}" class="photo-preview" th:src="@{${existingPhoto}}" alt="登録済みの商品画像">

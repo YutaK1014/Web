@@ -1,6 +1,10 @@
 # データベース設計書
 
-## users
+ローカルの単一利用者向け。ログイン・ユーザー情報管理は行わない。
+
+## users（既存DB互換用・アプリでは未使用）
+
+既存データを維持するためテーブルは残す。ユーザー登録・認証・情報編集には使用しない。
 
 | カラム | 型 | NULL | 制約 | 説明 |
 |---|---|---|---|---|
@@ -16,12 +20,12 @@
 | カラム | 型 | NULL | 制約 | 説明 |
 |---|---|---|---|---|
 | id | BIGINT | NO | PK, AUTO_INCREMENT | 取引ID |
-| user_id | BIGINT | NO | FK | ユーザーID |
+| user_id | BIGINT | YES | FK | 互換用。アプリの新規登録ではNULL |
 | item_name | VARCHAR(100) | NO |  | 商品名 |
 | marketplace | VARCHAR(50) | NO |  | フリマサイト |
 | custom_marketplace | VARCHAR(100) | YES |  | その他サイト名 |
 | selling_price | INT | NO |  | 販売価格 |
-| fee_rate | DECIMAL(5,2) | NO |  | 手数料率 |
+| fee_rate | DECIMAL(5,2) | NO |  | 手数料率（10.00 = 10%） |
 | selling_fee | INT | NO |  | 販売手数料 |
 | shipping_cost | INT | NO |  | 送料 |
 | purchase_price | INT | YES |  | 仕入価格 |
@@ -42,8 +46,23 @@
 | created_at | DATETIME | NO |  | 登録日時 |
 | updated_at | DATETIME | NO |  | 更新日時 |
 
+## app_settings
+
+| カラム | 型 | NULL | 制約 | 説明 |
+| --- | --- | --- | --- | --- |
+| setting_key | VARCHAR(50) | NO | PK | 設定キー |
+| setting_value | VARCHAR(255) | NO | | 設定値 |
+
+- fee_rounding：DOWN（切り捨て）・HALF_UP（四捨五入）・UP（切り上げ）。
+- monthly_goal：月間利益目標の整数文字列。未設定・空白は目標なし。
+
 ## データルール
 - 金額は原則0円以上
 - purchase_priceがNULLの場合、計算時は0円扱い
 - marketplaceが「その他」の場合、custom_marketplaceを必須とする
-- users.id と transactions.user_id は1対多
+- users.idへの外部キーは互換用に残すが、取引に所有者は必須としない。
+- 入力上限・必須項目は01_requirements.md「入力制限」に従いJava側で検証する。
+- profitは負の値も許容し、Javaで計算して登録・更新する。表示・集計は金額列から再計算する。
+- purchase_priceのDB初期値は0。created_at・updated_atはCURRENT_TIMESTAMPで初期化し、updated_atは更新時に更新する。
+- transactionsには検索用の複合インデックス(sold_date, id)を設定する。
+- schema.sqlは不足するテーブルを作成する。既存テーブルの変更やデータ移行は自動では行わない。

@@ -2,7 +2,7 @@
 
 ```mermaid
 erDiagram
-    USERS ||--o{ TRANSACTIONS : owns
+    USERS |o--o{ TRANSACTIONS : legacy_reference
 
     USERS {
         BIGINT id PK
@@ -39,9 +39,16 @@ erDiagram
         DATETIME created_at
         DATETIME updated_at
     }
+
+    APP_SETTINGS {
+        VARCHAR setting_key PK
+        VARCHAR setting_value
+    }
 ```
 
 ## リレーション
-- 1ユーザーは複数取引を持つ
-- 各取引は必ず1ユーザーに属する
+- USERSとTRANSACTIONS.user_idは既存DB互換用。ユーザー情報管理には使用しない。
+- 取引からユーザーへの参照は任意（0または1）。新規登録ではuser_idをNULLとする。
 - marketplace_settings は手数料率参照用
+- app_settingsは端数処理と月間利益目標を保存する。
+- ログイン・所有者確認・ユーザー別データ分離は行わない。
