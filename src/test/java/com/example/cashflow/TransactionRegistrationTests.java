@@ -158,6 +158,24 @@ class TransactionRegistrationTests {
         mvc.perform(get("/transactions/export").param("month","invalid")).andExpect(status().isBadRequest());
     }
 
+    @Test void rejectsOutOfRangeSearchDatesBeforeListingOrExporting() throws Exception {
+        for (String field : List.of("month", "from", "to")) {
+            for (String year : List.of("0999", "+10000", "-0001")) {
+                String value = year + (field.equals("month") ? "-01" : "-01-01");
+                mvc.perform(get("/transactions").param(field, value))
+                    .andExpect(status().isOk()).andExpect(model().hasErrors())
+                    .andExpect(content().string(containsString("販売月・販売期間を正しく入力してください。")));
+                mvc.perform(get("/transactions/export").param(field, value))
+                    .andExpect(status().isBadRequest());
+            }
+        }
+        // An invalid boundary must not be hidden by intersecting it with a valid month.
+        mvc.perform(get("/transactions").param("month", "2026-01").param("from", "0999-01-01"))
+            .andExpect(status().isOk()).andExpect(model().hasErrors());
+        mvc.perform(get("/transactions").param("from", "1000-01-01").param("to", "9999-12-31"))
+            .andExpect(status().isOk()).andExpect(model().hasNoErrors());
+    }
+
     @Test void rendersAllPagesAndKeepsExistingAmountsWhenSettingsChange() throws Exception {
         var session = session(); long id = create(session);
         for (String url : List.of("/","/dashboard","/reports?year=2026","/settings","/transactions")) {

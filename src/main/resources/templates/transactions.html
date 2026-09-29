@@ -9,7 +9,7 @@
 <div class="filter-grid">
 <label>商品名<input type="search" th:field="*{keyword}" maxlength="100"></label>
 <label>フリマサイト<select th:field="*{marketplace}"><option value="">すべて</option><option th:each="platform : ${platforms}" th:value="${platform}" th:text="${platform}"></option><option value="ヤフーオークション">ヤフーオークション（旧データ）</option></select></label>
-<label>販売月<input type="month" th:field="*{month}"></label>
+<label>販売月<input type="month" th:field="*{month}" min="1000-01" max="9999-12"></label>
 <label>開始日<input type="date" th:field="*{from}" min="1000-01-01" max="9999-12-31"></label>
 <label>終了日<input type="date" th:field="*{to}" min="1000-01-01" max="9999-12-31"></label></div>
 <div class="form-actions"><button class="button" type="submit">検索・絞り込み</button><a th:href="@{/transactions}">条件をクリア</a>

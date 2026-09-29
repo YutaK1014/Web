@@ -15,7 +15,10 @@ public class TransactionFilter {
 
     public void validate(Errors errors) {
         try {
-            if (!month.isBlank()) YearMonth.parse(month);
+            // Validate each original value before intersecting month and date bounds.
+            if (!month.isBlank()) validateYear(YearMonth.parse(month).getYear());
+            if (!from.isBlank()) validateYear(LocalDate.parse(from).getYear());
+            if (!to.isBlank()) validateYear(LocalDate.parse(to).getYear());
             LocalDate start = start();
             LocalDate end = end();
             if (start != null && end != null && start.isAfter(end))
@@ -26,6 +29,11 @@ public class TransactionFilter {
         if (!marketplace.isBlank() && !TransactionForm.PLATFORMS.contains(marketplace) && !"ヤフーオークション".equals(marketplace))
             errors.reject("marketplace", "フリマサイトを選び直してください。");
         if (keyword.length() > 100) errors.reject("keyword", "検索語は100文字以内で入力してください。");
+    }
+
+    private void validateYear(int year) {
+        if (year < 1000 || year > 9999)
+            throw new java.time.DateTimeException("販売日の年は1000〜9999です。");
     }
 
     public LocalDate start() {
