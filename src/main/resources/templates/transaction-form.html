@@ -25,6 +25,9 @@ th:object="${form}" enctype="multipart/form-data" th:attr="data-rounding=${round
 <div class="field"><label for="shippingCost">送料（円） <span class="required">必須</span></label><input type="number" th:field="*{shippingCost}" min="0" max="1000000000" step="1" required></div>
 <div class="field"><label for="purchasePrice">仕入価格（円） <span class="optional">任意</span></label><input type="number" th:field="*{purchasePrice}" min="0" max="1000000000" step="1" placeholder="未入力なら0円"></div>
 <div class="field"><label for="soldDate">販売日 <span class="required">必須</span></label><input type="date" th:field="*{soldDate}" min="1000-01-01" max="9999-12-31" required></div>
+<div class="field"><label for="tags">タグ <span class="optional">任意</span></label>
+<input th:field="*{tags}" maxlength="1000" placeholder="例：衣類, プレゼント" aria-describedby="tag-hint">
+<p id="tag-hint" class="hint">カンマまたは「、」で区切って入力。1つ30文字以内、10個まで。空欄で保存するとタグをすべて外せます。</p></div>
 <div class="field"><label for="memo">メモ <span class="optional">任意</span></label><textarea th:field="*{memo}" maxlength="10000" rows="5"></textarea></div>
 <div class="profit-preview"><span>販売手数料（自動計算）</span><output id="selling-fee" for="sellingPrice feeRate" aria-live="polite">— 円</output>
 <span>利益（自動計算）</span><output id="profit" for="sellingPrice feeRate shippingCost purchasePrice" aria-live="polite">— 円</output><p class="hint">販売価格 − 販売手数料 − 送料 − 仕入価格</p><p id="rounding-help" class="hint"></p></div>

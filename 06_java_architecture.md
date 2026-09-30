@@ -80,6 +80,11 @@ MyBatisのMapperとSQLアノテーションでDBを操作する。
 
 ## DTO・設定
 
+- TagForm：共通タグ入力の分割・前後空白除去・重複除去と上限検証。購入タグ編集の入力DTOも兼ねる。
+- TagRepository：購入・売却のタグ取得・削除・追加。各Serviceから履歴保存と同じトランザクション内で呼ぶ。
+- TransactionFilter.tag：売却検索・CSVのタグ条件。購入検索はPageControllerでタグ条件を受け付ける。
+- TagHistoryTests：両履歴のタグ登録・編集・解除、完全一致と複合条件、CSV、入力制限、エスケープ、削除時の連動を確認する。
+
 - TransactionForm：登録・編集の入力値と画像を受け取り、validateで検証する。
 - TransactionFilter：検索条件を検証し、start・endで対象期間を算出する。
 - SettingsForm：料率・端数処理・月間利益目標を検証する。

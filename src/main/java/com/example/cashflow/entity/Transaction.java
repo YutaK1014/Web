@@ -2,6 +2,7 @@ package com.example.cashflow.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.Data;
 
 @Data
@@ -19,7 +20,7 @@ public class Transaction {
     private LocalDate soldDate;
     private String imagePath;
     private String memo;
-    private java.util.List<String> tags = java.util.List.of();
+    private List<String> tags = List.of();
 
     public long getProfit() {
         return (long) sellingPrice - sellingFee - shippingCost - (purchasePrice == null ? 0 : purchasePrice);

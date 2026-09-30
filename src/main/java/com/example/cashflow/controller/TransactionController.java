@@ -113,12 +113,13 @@ public class TransactionController {
         var rows = service.search(filter);
         response.setContentType("text/csv;charset=UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=transactions.csv");
-        StringBuilder csv = new StringBuilder("\uFEFF商品名,サイト,販売価格,手数料率(%),販売手数料,送料,仕入価格,利益,販売日,メモ\r\n");
+        StringBuilder csv = new StringBuilder("\uFEFF商品名,サイト,販売価格,手数料率(%),販売手数料,送料,仕入価格,利益,販売日,メモ,タグ\r\n");
         for (var row : rows) {
             csv.append(csvText(row.getItemName())).append(',').append(csvText(row.getPlatformName())).append(',')
                 .append(row.getSellingPrice()).append(',').append(row.getFeeRate()).append(',').append(row.getSellingFee()).append(',')
                 .append(row.getShippingCost()).append(',').append(row.getPurchasePrice() == null ? 0 : row.getPurchasePrice()).append(',')
-                .append(row.getProfit()).append(',').append(row.getSoldDate()).append(',').append(csvText(row.getMemo())).append("\r\n");
+                .append(row.getProfit()).append(',').append(row.getSoldDate()).append(',').append(csvText(row.getMemo())).append(',')
+                .append(csvText(String.join(", ", row.getTags()))).append("\r\n");
         }
         response.getOutputStream().write(csv.toString().getBytes(StandardCharsets.UTF_8));
     }

@@ -8,6 +8,7 @@
 <div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
 <div class="filter-grid">
 <label>商品名<input type="search" th:field="*{keyword}" maxlength="100"></label>
+<label>タグ（完全一致）<input type="search" th:field="*{tag}" maxlength="30" placeholder="例：衣類"></label>
 <label>フリマサイト<select th:field="*{marketplace}"><option value="">すべて</option><option th:each="platform : ${platforms}" th:value="${platform}" th:text="${platform}"></option><option value="ヤフーオークション">ヤフーオークション（旧データ）</option></select></label>
 <label>販売月<input type="month" th:field="*{month}" min="1000-01" max="9999-12"></label>
 <label>開始日<input type="date" th:field="*{from}" min="1000-01-01" max="9999-12-31"></label>
@@ -22,7 +23,9 @@
 <thead><tr><th>写真</th><th>商品名</th><th>サイト</th><th>販売価格</th><th>販売手数料</th><th>送料</th><th>利益</th><th>販売日</th><th>操作</th></tr></thead>
 <tbody><tr th:each="transaction : ${transactions}">
 <td><img class="photo" th:if="${transaction.photoUrl != null}" th:src="@{${transaction.photoUrl}}" th:alt="${transaction.itemName + 'の写真'}" loading="lazy"><span class="no-photo" th:if="${transaction.photoUrl == null}">写真なし</span></td>
-<th scope="row" class="item-name" th:text="${transaction.itemName}"></th><td th:text="${transaction.platformName}"></td>
+<th scope="row" class="item-name"><span th:text="${transaction.itemName}"></span>
+<div class="tag-list"><a class="tag" th:each="label : ${transaction.tags}" th:text="${label}"
+th:href="@{/transactions(tag=${label},keyword=${filter.keyword},marketplace=${filter.marketplace},month=${filter.month},from=${filter.from},to=${filter.to})}"></a></div></th><td th:text="${transaction.platformName}"></td>
 <td class="amount" th:text="${#numbers.formatInteger(transaction.sellingPrice,1,'COMMA') + '円'}"></td>
 <td class="amount" th:text="${#numbers.formatInteger(transaction.sellingFee,1,'COMMA') + '円'}"></td>
 <td class="amount" th:text="${#numbers.formatInteger(transaction.shippingCost,1,'COMMA') + '円'}"></td>

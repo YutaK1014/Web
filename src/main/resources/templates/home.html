@@ -35,19 +35,29 @@ th:attr="aria-invalid=${#fields.hasErrors('store')}"></div>
 <div class="field"><label for="purchase-memo">メモ<span class="optional">任意</span></label>
 <textarea id="purchase-memo" th:field="*{memo}" rows="3" maxlength="10000"
 th:attr="aria-invalid=${#fields.hasErrors('memo')}"></textarea></div>
+<div class="field"><label for="purchase-tags">タグ<span class="optional">任意</span></label>
+<input id="purchase-tags" th:field="*{tags}" maxlength="1000" placeholder="例：衣類, プレゼント" aria-describedby="purchase-tag-hint">
+<p id="purchase-tag-hint" class="hint">カンマまたは「、」で区切って入力。1つ30文字以内、10個まで。</p></div>
 <button class="button" type="submit">購入履歴を登録する</button>
 </form>
 <h3>これまでの購入</h3>
-<p th:if="${#lists.isEmpty(purchases)}" class="empty">購入履歴はまだありません。購入したものを上のフォームから登録しましょう。</p>
+<form class="filters" method="get" th:action="@{/#purchase-history}">
+<label for="purchase-tag-search">タグで検索（完全一致）</label>
+<input id="purchase-tag-search" type="search" name="tag" th:value="${tag}" maxlength="30" placeholder="例：衣類">
+<div class="form-actions"><button class="button" type="submit">タグで検索</button><a th:href="@{/#purchase-history}">条件をクリア</a></div>
+</form>
+<p th:if="${#lists.isEmpty(purchases)}" class="empty" th:text="${#strings.isEmpty(tag) ? '購入履歴はまだありません。購入したものを上のフォームから登録しましょう。' : '該当する購入履歴はありません。タグを変更するか、条件をクリアしてください。'}"></p>
 <div th:unless="${#lists.isEmpty(purchases)}" class="table-container" tabindex="0" aria-label="購入履歴一覧">
 <table><caption>購入日の新しい順に表示しています。</caption>
-<thead><tr><th scope="col">購入日</th><th scope="col">商品名</th><th scope="col">購入金額</th><th scope="col">購入先</th><th scope="col">メモ</th></tr></thead>
+<thead><tr><th scope="col">購入日</th><th scope="col">商品名</th><th scope="col">購入金額</th><th scope="col">購入先</th><th scope="col">メモ</th><th scope="col">タグ</th></tr></thead>
 <tbody><tr th:each="purchase : ${purchases}">
 <td class="nowrap" th:text="${purchase.purchasedDate}"></td>
 <th scope="row" class="item-name" th:text="${purchase.itemName}"></th>
 <td class="amount" th:text="${#numbers.formatInteger(purchase.amount,1,'COMMA') + '円'}"></td>
 <td class="item-name" th:text="${#strings.isEmpty(purchase.store) ? '—' : purchase.store}"></td>
 <td class="item-name" th:text="${#strings.isEmpty(purchase.memo) ? '—' : purchase.memo}"></td>
+<td class="item-name"><div class="tag-list"><a class="tag" th:each="label : ${purchase.tags}" th:text="${label}" th:href="@{/(tag=${label})} + '#purchase-history'"></a></div>
+<a th:href="@{/purchases/{id}/tags(id=${purchase.id})}">タグを編集</a></td>
 </tr></tbody></table></div>
 </section>
 </main></body></html>

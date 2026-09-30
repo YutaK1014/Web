@@ -67,6 +67,8 @@ input[type="checkbox"] { width: auto; }
 .recent { list-style: none; padding: 0; }
 .recent li { display: flex; flex-wrap: wrap; gap: 16px; padding: 14px 0; border-bottom: 1px solid #d3dfd8; }
 .recent a { margin-right: auto; overflow-wrap: anywhere; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.tag { display: inline-block; padding: 4px 10px; border: 1px solid #80b7a2; border-radius: 16px; font-size: .85rem; overflow-wrap: anywhere; }
 .nowrap { white-space: nowrap; }
 .hero { padding: 24px 0; }
 .dark { color-scheme: dark; color: #e3eee8; background: #16231d; }

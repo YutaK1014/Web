@@ -2,6 +2,7 @@ package com.example.cashflow.controller;
 
 import com.example.cashflow.dto.SettingsForm;
 import com.example.cashflow.dto.PurchaseForm;
+import com.example.cashflow.dto.TagForm;
 import com.example.cashflow.service.PurchaseService;
 import com.example.cashflow.service.MarketplaceService;
 import com.example.cashflow.service.ReportService;
@@ -27,9 +28,12 @@ public class PageController {
     }
 
     @GetMapping("/")
-    public String home(Model model) {
+    public String home(@RequestParam(defaultValue = "") String tag, Model model) {
+        tag = tag.strip();
+        if (tag.length() > 30) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "検索タグは30文字以内で入力してください。");
         model.addAttribute("purchaseForm", new PurchaseForm());
-        model.addAttribute("purchases", purchases.all());
+        model.addAttribute("tag", tag);
+        model.addAttribute("purchases", purchases.search(tag));
         return "home";
     }
 
@@ -38,10 +42,33 @@ public class PageController {
                                Model model, RedirectAttributes redirect) {
         purchases.save(form, errors);
         if (errors.hasErrors()) {
+            model.addAttribute("tag", "");
             model.addAttribute("purchases", purchases.all());
             return "home";
         }
         redirect.addFlashAttribute("successMessage", "購入履歴を登録しました。");
+        return "redirect:/#purchase-history";
+    }
+
+    @GetMapping("/purchases/{id}/tags")
+    public String purchaseTags(@PathVariable long id, Model model) {
+        var purchase = purchases.get(id);
+        var form = new TagForm();
+        form.setTags(String.join(", ", purchase.getTags()));
+        model.addAttribute("purchase", purchase);
+        model.addAttribute("tagForm", form);
+        return "purchase-tags";
+    }
+
+    @PostMapping("/purchases/{id}/tags")
+    public String savePurchaseTags(@PathVariable long id,
+            @ModelAttribute("tagForm") TagForm form,
+            BindingResult errors, Model model, RedirectAttributes redirect) {
+        model.addAttribute("purchase", purchases.get(id));
+        TagForm.validate(form.getTags(), errors);
+        if (errors.hasErrors()) return "purchase-tags";
+        purchases.updateTags(id, form.getTags());
+        redirect.addFlashAttribute("successMessage", "購入履歴のタグを更新しました。");
         return "redirect:/#purchase-history";
     }
 

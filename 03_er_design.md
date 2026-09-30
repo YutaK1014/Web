@@ -3,6 +3,20 @@
 ```mermaid
 erDiagram
     USERS |o--o{ TRANSACTIONS : legacy_reference
+    TRANSACTIONS ||--o{ TRANSACTION_TAGS : tagged
+    PURCHASES ||--o{ PURCHASE_TAGS : tagged
+
+    TRANSACTION_TAGS {
+        BIGINT id PK
+        BIGINT transaction_id FK
+        VARCHAR tag
+    }
+
+    PURCHASE_TAGS {
+        BIGINT id PK
+        BIGINT purchase_id FK
+        VARCHAR tag
+    }
 
     USERS {
         BIGINT id PK

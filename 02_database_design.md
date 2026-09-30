@@ -74,7 +74,14 @@
 
 (purchased_date, id)に一覧用インデックスを設定する。外部キーは設けない。
 
-### 共通・売却取引
+### transaction_tags・purchase_tags（タグ）
+
+起動時に新しい2テーブルを作成し、既存の取引・購入テーブルの変更は不要。
+各テーブルはid（BIGINT、自動採番主キー）、transaction_idまたはpurchase_id（BIGINT、NOT NULL）、tag（VARCHAR(30)、NOT NULL）を持つ。
+各履歴IDはtransactions.idまたはpurchases.idへの外部キーで、ON DELETE CASCADEにより履歴削除時にタグも削除する。
+タグの置換は履歴の保存と同じDBトランザクションで行う。入力の重複除去と検索の完全一致はJava側で行う。
+
+### 共通ルール
 - 金額は原則0円以上
 - purchase_priceがNULLの場合、計算時は0円扱い
 - marketplaceが「その他」の場合、custom_marketplaceを必須とする

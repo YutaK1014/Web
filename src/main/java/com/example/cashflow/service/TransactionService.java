@@ -4,6 +4,8 @@ import com.example.cashflow.entity.Transaction;
 import com.example.cashflow.dto.TransactionForm;
 import com.example.cashflow.dto.TransactionFilter;
 import com.example.cashflow.repository.TransactionRepository;
+import com.example.cashflow.repository.TagRepository;
+import com.example.cashflow.dto.TagForm;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,10 +23,10 @@ public class TransactionService {
     private final TransactionRepository repository;
     private final PhotoStorage photos;
     private final MarketplaceService marketplaces;
-    private final com.example.cashflow.repository.TagRepository tags;
+    private final TagRepository tags;
 
     public TransactionService(TransactionRepository repository, PhotoStorage photos, MarketplaceService marketplaces,
-                              com.example.cashflow.repository.TagRepository tags) {
+                              TagRepository tags) {
         this.repository = repository;
         this.photos = photos;
         this.marketplaces = marketplaces;
@@ -76,7 +78,7 @@ public class TransactionService {
             if (id == null) repository.insert(row);
             else if (repository.update(row) == 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
             tags.clearTransaction(row.getId());
-            for (String tag : com.example.cashflow.dto.TagForm.parse(form.getTags())) tags.addTransaction(row.getId(), tag);
+            for (String tag : TagForm.parse(form.getTags())) tags.addTransaction(row.getId(), tag);
         } catch (RuntimeException exception) {
             if (!TransactionSynchronizationManager.isSynchronizationActive()) cleanup(newPhoto);
             throw exception;

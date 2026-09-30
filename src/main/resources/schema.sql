@@ -57,15 +57,15 @@ CREATE TABLE IF NOT EXISTS purchases (
 );
 
 CREATE TABLE IF NOT EXISTS transaction_tags (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     transaction_id BIGINT NOT NULL,
     tag VARCHAR(30) NOT NULL,
-    PRIMARY KEY (transaction_id, tag),
     FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS purchase_tags (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     purchase_id BIGINT NOT NULL,
     tag VARCHAR(30) NOT NULL,
-    PRIMARY KEY (purchase_id, tag),
     FOREIGN KEY (purchase_id) REFERENCES purchases(id) ON DELETE CASCADE
 );
