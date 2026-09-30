@@ -41,12 +41,18 @@ th:attr="aria-invalid=${#fields.hasErrors('memo')}"></textarea></div>
 <button class="button" type="submit">購入履歴を登録する</button>
 </form>
 <h3>これまでの購入</h3>
-<form class="filters" method="get" th:action="@{/#purchase-history}">
+<form class="filters" method="get" th:action="@{/#purchase-history}" th:object="${purchaseFilter}">
+<div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
+<div class="filter-grid">
+<label>検索期間<select th:field="*{period}"><option value="">全期間・日付で指定</option><option value="1month">1か月以内</option><option value="3months">3か月以内</option><option value="custom">期間指定</option></select></label>
+<label>開始日<input type="date" th:field="*{from}" min="1000-01-01" max="9999-12-31"></label>
+<label>終了日<input type="date" th:field="*{to}" min="1000-01-01" max="9999-12-31"></label></div>
+<p class="hint">1か月以内・3か月以内は、今日からさかのぼって今日までの購入日で検索します。この場合、開始日・終了日は使いません。期間指定では開始日と終了日を入力してください（両日を含みます）。</p>
 <label for="purchase-tag-search">タグで検索（完全一致）</label>
 <input id="purchase-tag-search" type="search" name="tag" th:value="${tag}" maxlength="30" placeholder="例：衣類">
-<div class="form-actions"><button class="button" type="submit">タグで検索</button><a th:href="@{/#purchase-history}">条件をクリア</a></div>
+<div class="form-actions"><button class="button" type="submit">検索・絞り込み</button><a th:href="@{/#purchase-history}">条件をクリア</a></div>
 </form>
-<p th:if="${#lists.isEmpty(purchases)}" class="empty" th:text="${#strings.isEmpty(tag) ? '購入履歴はまだありません。購入したものを上のフォームから登録しましょう。' : '該当する購入履歴はありません。タグを変更するか、条件をクリアしてください。'}"></p>
+<p th:if="${#lists.isEmpty(purchases)}" class="empty" th:text="${#strings.isEmpty(tag) and #strings.isEmpty(purchaseFilter.period) and #strings.isEmpty(purchaseFilter.from) and #strings.isEmpty(purchaseFilter.to) ? '購入履歴はまだありません。購入したものを上のフォームから登録しましょう。' : '該当する購入履歴はありません。検索条件を変更するか、条件をクリアしてください。'}"></p>
 <div th:unless="${#lists.isEmpty(purchases)}" class="table-container" tabindex="0" aria-label="購入履歴一覧">
 <table><caption>購入日の新しい順に表示しています。</caption>
 <thead><tr><th scope="col">購入日</th><th scope="col">商品名</th><th scope="col">購入金額</th><th scope="col">購入先</th><th scope="col">メモ</th><th scope="col">タグ</th></tr></thead>
@@ -56,7 +62,7 @@ th:attr="aria-invalid=${#fields.hasErrors('memo')}"></textarea></div>
 <td class="amount" th:text="${#numbers.formatInteger(purchase.amount,1,'COMMA') + '円'}"></td>
 <td class="item-name" th:text="${#strings.isEmpty(purchase.store) ? '—' : purchase.store}"></td>
 <td class="item-name" th:text="${#strings.isEmpty(purchase.memo) ? '—' : purchase.memo}"></td>
-<td class="item-name"><div class="tag-list"><a class="tag" th:each="label : ${purchase.tags}" th:text="${label}" th:href="@{/(tag=${label})} + '#purchase-history'"></a></div>
+<td class="item-name"><div class="tag-list"><a class="tag" th:each="label : ${purchase.tags}" th:text="${label}" th:href="@{/(tag=${label},period=${purchaseFilter.period},from=${purchaseFilter.from},to=${purchaseFilter.to})} + '#purchase-history'"></a></div>
 <a th:href="@{/purchases/{id}/tags(id=${purchase.id})}">タグを編集</a></td>
 </tr></tbody></table></div>
 </section>

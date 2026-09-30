@@ -1,6 +1,7 @@
 package com.example.cashflow.service;
 
 import com.example.cashflow.dto.PurchaseForm;
+import com.example.cashflow.dto.PurchaseFilter;
 import com.example.cashflow.entity.Purchase;
 import com.example.cashflow.repository.PurchaseRepository;
 import com.example.cashflow.repository.TagRepository;
@@ -31,6 +32,15 @@ public class PurchaseService {
 
     public List<Purchase> search(String tag) {
         return all().stream().filter(row -> tag.isEmpty() || row.getTags().contains(tag)).toList();
+    }
+
+    public List<Purchase> search(PurchaseFilter filter) {
+        var start = filter.start();
+        var end = filter.end();
+        return all().stream()
+            .filter(row -> filter.getTag().isEmpty() || row.getTags().contains(filter.getTag()))
+            .filter(row -> start == null || !row.getPurchasedDate().isBefore(start))
+            .filter(row -> end == null || !row.getPurchasedDate().isAfter(end)).toList();
     }
 
     public Purchase get(long id) {

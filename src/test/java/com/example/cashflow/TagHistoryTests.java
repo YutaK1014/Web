@@ -130,4 +130,61 @@ class TagHistoryTests {
         assertThrows(IllegalArgumentException.class, () -> TagForm.parse("1,2,3,4,5,6,7,8,9,10,11"));
         assertEquals(10, TagForm.parse("1,2,3,4,5,6,7,8,9,10").size());
     }
+
+    @Test void bothHistoriesSupportInclusiveDatePresetsCustomRangesAndTags() throws Exception {
+        var today = java.time.LocalDate.now();
+        var dates = List.of(today, today.minusMonths(1), today.minusMonths(3),
+            today.minusMonths(3).minusDays(1), today.plusDays(1));
+        for (int i = 0; i < dates.size(); i++) {
+            long id = purchase("期間商品" + i, "衣類");
+            jdbc.update("UPDATE purchases SET purchased_date=? WHERE id=?", dates.get(i), id);
+            sale("/transactions", "期間商品" + i, "衣類");
+            jdbc.update("UPDATE transactions SET sold_date=? WHERE item_name=?", dates.get(i), "期間商品" + i);
+        }
+        for (String url : List.of("/", "/transactions")) {
+            String attribute = url.equals("/") ? "purchases" : "transactions";
+            mvc.perform(get(url).param("period", "1month").param("tag", "衣類"))
+                .andExpect(status().isOk()).andExpect(model().attribute(attribute, hasSize(2)));
+            mvc.perform(get(url).param("period", "3months").param("tag", "衣類")
+                .param("from", "2000-01-01").param("to", "2000-01-02").param("month", "2000-01"))
+                .andExpect(status().isOk()).andExpect(model().attribute(attribute, hasSize(3)));
+            mvc.perform(get(url).param("period", "custom").param("from", today.minusMonths(3).toString())
+                .param("to", today.minusMonths(1).toString()).param("tag", "衣類"))
+                .andExpect(status().isOk()).andExpect(model().attribute(attribute, hasSize(2)));
+            mvc.perform(get(url).param("period", "1month").param("tag", "対象外"))
+                .andExpect(model().attribute(attribute, hasSize(0)));
+            mvc.perform(get(url)).andExpect(model().attribute(attribute, hasSize(5)));
+        }
+        mvc.perform(get("/transactions/export").param("period", "1month"))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("期間商品0")))
+            .andExpect(content().string(containsString("期間商品1")))
+            .andExpect(content().string(not(containsString("期間商品2"))))
+            .andExpect(content().string(not(containsString("期間商品4"))));
+    }
+
+    @Test void invalidPeriodsAndDatesAreRejectedWithVisibleErrors() throws Exception {
+        for (String url : List.of("/", "/transactions")) {
+            String form = url.equals("/") ? "purchaseFilter" : "filter";
+            mvc.perform(get(url).param("period", "invalid"))
+                .andExpect(model().attributeHasFieldErrors(form, "period"));
+            mvc.perform(get(url).param("period", "custom").param("from", "2026-01-01"))
+                .andExpect(model().attributeHasErrors(form))
+                .andExpect(content().string(containsString("開始日と終了日を入力")));
+            mvc.perform(get(url).param("period", "custom").param("from", "2026-03-01").param("to", "2026-02-01"))
+                .andExpect(model().attributeHasErrors(form));
+            mvc.perform(get(url).param("period", "custom").param("from", "2026-02-30").param("to", "2026-03-01"))
+                .andExpect(model().attributeHasErrors(form));
+        }
+        mvc.perform(get("/transactions/export").param("period", "custom"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test void calendarMonthPresetsHandleMonthEndsAndLeapYears() {
+        var range = new com.example.cashflow.dto.DateRangeFilter(java.time.LocalDate.of(2024, 3, 31));
+        range.setPeriod("1month");
+        assertEquals(java.time.LocalDate.of(2024, 2, 29), range.start());
+        assertEquals(java.time.LocalDate.of(2024, 3, 31), range.end());
+        range.setPeriod("3months");
+        assertEquals(java.time.LocalDate.of(2023, 12, 31), range.start());
+    }
 }

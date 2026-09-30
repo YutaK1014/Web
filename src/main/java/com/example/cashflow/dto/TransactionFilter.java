@@ -6,22 +6,19 @@ import lombok.Data;
 import org.springframework.validation.Errors;
 
 @Data
-public class TransactionFilter {
+public class TransactionFilter extends DateRangeFilter {
     private String keyword = "";
     private String tag = "";
     private String marketplace = "";
     private String month = "";
-    private String from = "";
-    private String to = "";
 
     public void validate(Errors errors) {
+        super.validate(errors);
         tag = tag == null ? "" : tag.strip();
         if (tag.length() > 30) errors.rejectValue("tag", "invalid", "検索タグは30文字以内で入力してください。");
         try {
             // Validate each original value before intersecting month and date bounds.
-            if (!month.isBlank()) validateYear(YearMonth.parse(month).getYear());
-            if (!from.isBlank()) validateYear(LocalDate.parse(from).getYear());
-            if (!to.isBlank()) validateYear(LocalDate.parse(to).getYear());
+            if (!isPreset() && !month.isBlank()) validateYear(YearMonth.parse(month).getYear());
             LocalDate start = start();
             LocalDate end = end();
             if (start != null && end != null && start.isAfter(end))
@@ -40,7 +37,8 @@ public class TransactionFilter {
     }
 
     public LocalDate start() {
-        LocalDate date = from.isBlank() ? null : LocalDate.parse(from);
+        if (isPreset()) return super.start();
+        LocalDate date = super.start();
         if (!month.isBlank()) {
             LocalDate monthStart = YearMonth.parse(month).atDay(1);
             if (date == null || monthStart.isAfter(date)) date = monthStart;
@@ -49,7 +47,8 @@ public class TransactionFilter {
     }
 
     public LocalDate end() {
-        LocalDate date = to.isBlank() ? null : LocalDate.parse(to);
+        if (isPreset()) return super.end();
+        LocalDate date = super.end();
         if (!month.isBlank()) {
             LocalDate monthEnd = YearMonth.parse(month).atEndOfMonth();
             if (date == null || monthEnd.isBefore(date)) date = monthEnd;

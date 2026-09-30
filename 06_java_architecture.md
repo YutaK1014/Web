@@ -80,6 +80,9 @@ MyBatisのMapperとSQLアノテーションでDBを操作する。
 
 ## DTO・設定
 
+- DateRangeFilter：期間プリセット・開始日・終了日の共通検証と日付範囲計算。リクエスト単位で基準日を固定する。
+- PurchaseFilter：DateRangeFilterを継承し、購入履歴のタグ条件も検証する。TransactionFilterも同じ期間処理を利用する。
+
 - TagForm：共通タグ入力の分割・前後空白除去・重複除去と上限検証。購入タグ編集の入力DTOも兼ねる。
 - TagRepository：購入・売却のタグ取得・削除・追加。各Serviceから履歴保存と同じトランザクション内で呼ぶ。
 - TransactionFilter.tag：売却検索・CSVのタグ条件。購入検索はPageControllerでタグ条件を受け付ける。

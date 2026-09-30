@@ -11,8 +11,10 @@
 <label>タグ（完全一致）<input type="search" th:field="*{tag}" maxlength="30" placeholder="例：衣類"></label>
 <label>フリマサイト<select th:field="*{marketplace}"><option value="">すべて</option><option th:each="platform : ${platforms}" th:value="${platform}" th:text="${platform}"></option><option value="ヤフーオークション">ヤフーオークション（旧データ）</option></select></label>
 <label>販売月<input type="month" th:field="*{month}" min="1000-01" max="9999-12"></label>
+<label>検索期間<select th:field="*{period}"><option value="">全期間・日付で指定</option><option value="1month">1か月以内</option><option value="3months">3か月以内</option><option value="custom">期間指定</option></select></label>
 <label>開始日<input type="date" th:field="*{from}" min="1000-01-01" max="9999-12-31"></label>
 <label>終了日<input type="date" th:field="*{to}" min="1000-01-01" max="9999-12-31"></label></div>
+<p class="hint">1か月以内・3か月以内は、今日からさかのぼって今日までの販売日で検索します。この場合、販売月・開始日・終了日は使いません。期間指定では開始日と終了日を入力してください（両日を含みます）。</p>
 <div class="form-actions"><button class="button" type="submit">検索・絞り込み</button><a th:href="@{/transactions}">条件をクリア</a>
 <button type="submit" th:formaction="@{/transactions/export}">CSV出力</button></div>
 </form>
@@ -25,7 +27,7 @@
 <td><img class="photo" th:if="${transaction.photoUrl != null}" th:src="@{${transaction.photoUrl}}" th:alt="${transaction.itemName + 'の写真'}" loading="lazy"><span class="no-photo" th:if="${transaction.photoUrl == null}">写真なし</span></td>
 <th scope="row" class="item-name"><span th:text="${transaction.itemName}"></span>
 <div class="tag-list"><a class="tag" th:each="label : ${transaction.tags}" th:text="${label}"
-th:href="@{/transactions(tag=${label},keyword=${filter.keyword},marketplace=${filter.marketplace},month=${filter.month},from=${filter.from},to=${filter.to})}"></a></div></th><td th:text="${transaction.platformName}"></td>
+th:href="@{/transactions(tag=${label},keyword=${filter.keyword},marketplace=${filter.marketplace},month=${filter.month},period=${filter.period},from=${filter.from},to=${filter.to})}"></a></div></th><td th:text="${transaction.platformName}"></td>
 <td class="amount" th:text="${#numbers.formatInteger(transaction.sellingPrice,1,'COMMA') + '円'}"></td>
 <td class="amount" th:text="${#numbers.formatInteger(transaction.sellingFee,1,'COMMA') + '円'}"></td>
 <td class="amount" th:text="${#numbers.formatInteger(transaction.shippingCost,1,'COMMA') + '円'}"></td>

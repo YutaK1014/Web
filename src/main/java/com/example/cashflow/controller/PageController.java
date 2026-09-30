@@ -2,6 +2,7 @@ package com.example.cashflow.controller;
 
 import com.example.cashflow.dto.SettingsForm;
 import com.example.cashflow.dto.PurchaseForm;
+import com.example.cashflow.dto.PurchaseFilter;
 import com.example.cashflow.dto.TagForm;
 import com.example.cashflow.service.PurchaseService;
 import com.example.cashflow.service.MarketplaceService;
@@ -28,12 +29,13 @@ public class PageController {
     }
 
     @GetMapping("/")
-    public String home(@RequestParam(defaultValue = "") String tag, Model model) {
-        tag = tag.strip();
-        if (tag.length() > 30) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "検索タグは30文字以内で入力してください。");
+    public String home(@ModelAttribute("purchaseFilter") PurchaseFilter filter, BindingResult errors, Model model,
+                       jakarta.servlet.http.HttpServletResponse response) {
+        filter.validate(errors);
+        if (errors.hasErrors()) response.setStatus(400);
         model.addAttribute("purchaseForm", new PurchaseForm());
-        model.addAttribute("tag", tag);
-        model.addAttribute("purchases", purchases.search(tag));
+        model.addAttribute("tag", filter.getTag());
+        model.addAttribute("purchases", errors.hasErrors() ? java.util.List.of() : purchases.search(filter));
         return "home";
     }
 
@@ -42,6 +44,7 @@ public class PageController {
                                Model model, RedirectAttributes redirect) {
         purchases.save(form, errors);
         if (errors.hasErrors()) {
+            model.addAttribute("purchaseFilter", new PurchaseFilter());
             model.addAttribute("tag", "");
             model.addAttribute("purchases", purchases.all());
             return "home";
