@@ -57,6 +57,24 @@
 - monthly_goal：月間利益目標の整数文字列。未設定・空白は目標なし。
 
 ## データルール
+
+### purchases（購入履歴・2026-09-30追加）
+
+売却取引と独立したテーブル。起動時に存在しない場合のみ作成する。
+
+| カラム | 型 | 制約・用途 |
+| --- | --- | --- |
+| id | BIGINT | PK、AUTO_INCREMENT |
+| item_name | VARCHAR(100) | NOT NULL、商品名 |
+| purchased_date | DATE | NOT NULL、購入日 |
+| amount | INT | NOT NULL、購入金額 |
+| store | VARCHAR(100) | NOT NULL、既定値は空文字、購入先 |
+| memo | TEXT | NULL可、メモ |
+| created_at | DATETIME | NOT NULL、CURRENT_TIMESTAMP |
+
+(purchased_date, id)に一覧用インデックスを設定する。外部キーは設けない。
+
+### 共通・売却取引
 - 金額は原則0円以上
 - purchase_priceがNULLの場合、計算時は0円扱い
 - marketplaceが「その他」の場合、custom_marketplaceを必須とする

@@ -1,0 +1,59 @@
+package com.example.cashflow.service;
+
+import com.example.cashflow.dto.PurchaseForm;
+import com.example.cashflow.entity.Purchase;
+import com.example.cashflow.repository.PurchaseRepository;
+import java.time.LocalDate;
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.validation.Errors;
+
+@Service
+public class PurchaseService {
+    private final PurchaseRepository repository;
+    private final com.example.cashflow.repository.TagRepository tags;
+
+    public PurchaseService(PurchaseRepository repository, com.example.cashflow.repository.TagRepository tags) {
+        this.repository = repository;
+        this.tags = tags;
+    }
+
+    public List<Purchase> all() {
+        var rows = repository.findAll();
+        rows.forEach(row -> row.setTags(tags.purchaseTags(row.getId())));
+        return rows;
+    }
+
+    public List<Purchase> search(String tag) {
+        return all().stream().filter(row -> tag.isEmpty() || row.getTags().contains(tag)).toList();
+    }
+
+    public Purchase get(long id) {
+        var row = repository.findById(id);
+        if (row == null) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+        row.setTags(tags.purchaseTags(id));
+        return row;
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void updateTags(long id, String value) {
+        var parsed = com.example.cashflow.dto.TagForm.parse(value);
+        get(id);
+        tags.clearPurchase(id);
+        for (String tag : parsed) tags.addPurchase(id, tag);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void save(PurchaseForm form, Errors errors) {
+        form.validate(errors);
+        if (errors.hasErrors()) return;
+        Purchase purchase = new Purchase();
+        purchase.setItemName(form.getItemName());
+        purchase.setPurchasedDate(LocalDate.parse(form.getPurchasedDate()));
+        purchase.setAmount(Integer.parseInt(form.getAmount()));
+        purchase.setStore(form.getStore());
+        purchase.setMemo(form.getMemo());
+        repository.insert(purchase);
+        for (String tag : com.example.cashflow.dto.TagForm.parse(form.getTags())) tags.addPurchase(purchase.getId(), tag);
+    }
+}

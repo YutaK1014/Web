@@ -66,6 +66,11 @@ TransactionService.saveは新規登録と編集を共通化し、IDの有無で�
 
 ## Repository
 
+購入履歴の追加構成：PageControllerがホーム表示とPOST /purchasesを担当し、
+PurchaseServiceがPurchaseFormの検証とPurchaseへの変換・保存を行う。
+PurchaseRepositoryのfindAll・insertでpurchasesテーブルを操作する。
+PurchaseHistoryTestsで登録・表示順・入力検証・HTMLエスケープ・収支集計の独立性を確認する。
+
 MyBatisのMapperとSQLアノテーションでDBを操作する。
 
 - TransactionRepository：search・findById・countImageReferences・insert・update・delete。

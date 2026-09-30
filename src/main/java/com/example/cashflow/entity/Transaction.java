@@ -19,6 +19,7 @@ public class Transaction {
     private LocalDate soldDate;
     private String imagePath;
     private String memo;
+    private java.util.List<String> tags = java.util.List.of();
 
     public long getProfit() {
         return (long) sellingPrice - sellingFee - shippingCost - (purchasePrice == null ? 0 : purchasePrice);

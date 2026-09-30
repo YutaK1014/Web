@@ -78,3 +78,4 @@ input[type="checkbox"] { width: auto; }
 .dark input, .dark select, .dark textarea { background: #1a2d22; color: #e3eee8; }
 .dark .negative { color: #ffaaa5; }
 .dark .success { background: #254d36; }
+.dark .optional { color: #243c37; }

@@ -9,4 +9,45 @@
 <div><h2>収支を振り返る</h2><p>月別・年間・サイト別に集計できます。</p></div>
 <div><h2>商品を探す</h2><p>商品名や販売日で、過去の取引を絞り込めます。</p></div></section>
 <p>初めて使うときは、<a th:href="@{/settings}">設定</a>で手数料率と端数処理を選択してください。</p>
+<section id="purchase-history" aria-labelledby="purchase-heading">
+<h2 id="purchase-heading">購入履歴</h2>
+<p>購入したものを記録して、あとから振り返れます。</p>
+<p class="hint">購入履歴は売却取引と別に保存され、利益集計には反映されません。</p>
+<p th:if="${successMessage}" th:text="${successMessage}" class="success" role="status"></p>
+<form class="transaction-form" th:action="@{/purchases}" th:object="${purchaseForm}" method="post">
+<h3>購入したものを登録</h3>
+<div th:if="${#fields.hasErrors('*')}" class="error" role="alert"><p>入力内容を確認してください。</p>
+<ul><li th:each="error : ${#fields.errors('*')}" th:text="${error}"></li></ul></div>
+<div class="filter-grid">
+<div class="field"><label for="purchase-item">商品名<span class="required">必須</span></label>
+<input id="purchase-item" th:field="*{itemName}" required maxlength="100" placeholder="例：スニーカー"
+th:errorclass="invalid" th:attr="aria-invalid=${#fields.hasErrors('itemName')}"></div>
+<div class="field"><label for="purchase-date">購入日<span class="required">必須</span></label>
+<input id="purchase-date" type="date" th:field="*{purchasedDate}" required min="1000-01-01" max="9999-12-31"
+th:attr="aria-invalid=${#fields.hasErrors('purchasedDate')}"></div>
+<div class="field"><label for="purchase-amount">購入金額（円）<span class="required">必須</span></label>
+<input id="purchase-amount" th:field="*{amount}" inputmode="numeric" pattern="[0-9]{1,10}" maxlength="10" required placeholder="例：3000"
+th:attr="aria-invalid=${#fields.hasErrors('amount')}"></div>
+<div class="field"><label for="purchase-store">購入先<span class="optional">任意</span></label>
+<input id="purchase-store" th:field="*{store}" maxlength="100" placeholder="例：メルカリ・店舗名"
+th:attr="aria-invalid=${#fields.hasErrors('store')}"></div>
+</div>
+<div class="field"><label for="purchase-memo">メモ<span class="optional">任意</span></label>
+<textarea id="purchase-memo" th:field="*{memo}" rows="3" maxlength="10000"
+th:attr="aria-invalid=${#fields.hasErrors('memo')}"></textarea></div>
+<button class="button" type="submit">購入履歴を登録する</button>
+</form>
+<h3>これまでの購入</h3>
+<p th:if="${#lists.isEmpty(purchases)}" class="empty">購入履歴はまだありません。購入したものを上のフォームから登録しましょう。</p>
+<div th:unless="${#lists.isEmpty(purchases)}" class="table-container" tabindex="0" aria-label="購入履歴一覧">
+<table><caption>購入日の新しい順に表示しています。</caption>
+<thead><tr><th scope="col">購入日</th><th scope="col">商品名</th><th scope="col">購入金額</th><th scope="col">購入先</th><th scope="col">メモ</th></tr></thead>
+<tbody><tr th:each="purchase : ${purchases}">
+<td class="nowrap" th:text="${purchase.purchasedDate}"></td>
+<th scope="row" class="item-name" th:text="${purchase.itemName}"></th>
+<td class="amount" th:text="${#numbers.formatInteger(purchase.amount,1,'COMMA') + '円'}"></td>
+<td class="item-name" th:text="${#strings.isEmpty(purchase.store) ? '—' : purchase.store}"></td>
+<td class="item-name" th:text="${#strings.isEmpty(purchase.memo) ? '—' : purchase.memo}"></td>
+</tr></tbody></table></div>
+</section>
 </main></body></html>

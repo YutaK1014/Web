@@ -16,7 +16,7 @@ th:object="${form}" enctype="multipart/form-data" th:attr="data-rounding=${round
 <p id="photo-error" class="field-error" role="alert"></p><img id="photo-preview" class="photo-preview" alt="選択した商品画像" hidden></div>
 <div class="field"><label for="itemName">商品名 <span class="required">必須</span></label><input type="text" th:field="*{itemName}" maxlength="100" required></div>
 <div class="field"><label for="marketplace">フリマサイト <span class="required">必須</span></label>
-<select th:field="*{marketplace}" required><option value="">選択してください</option><option th:each="platform : ${platforms}" th:value="${platform}" th:text="${platform}" th:attr="data-rate=${rates[platform]}"></option></select>
+<select th:field="*{marketplace}" required><option value="">選択してください</option><option th:each="platform : ${platforms}" th:value="${platform}" th:text="${platform}" th:attr="data-rate=${rates.get(platform)}"></option></select>
 <p class="hint">サイト別の手数料率は<a th:href="@{/settings}">設定画面</a>で設定できます。編集保存時も現在の設定で再計算します。</p>
 <p class="hint" th:if="${form.marketplace == 'ヤフーオークション'}">旧データのヤフーオークションは「その他」を選び、サイト名と手数料率を入力してください。</p></div>
 <div class="field" id="custom-platform-field"><label for="customMarketplace">その他のサイト名 <span class="required">その他を選択した場合は必須</span></label><input type="text" th:field="*{customMarketplace}" maxlength="100"></div>

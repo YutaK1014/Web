@@ -1,6 +1,8 @@
 package com.example.cashflow.controller;
 
 import com.example.cashflow.dto.SettingsForm;
+import com.example.cashflow.dto.PurchaseForm;
+import com.example.cashflow.service.PurchaseService;
 import com.example.cashflow.service.MarketplaceService;
 import com.example.cashflow.service.ReportService;
 import java.time.LocalDate;
@@ -17,13 +19,31 @@ import org.springframework.http.HttpStatus;
 public class PageController {
     private final ReportService reports;
     private final MarketplaceService marketplaces;
-    public PageController(ReportService reports, MarketplaceService marketplaces) {
+    private final PurchaseService purchases;
+    public PageController(ReportService reports, MarketplaceService marketplaces, PurchaseService purchases) {
         this.reports = reports;
         this.marketplaces = marketplaces;
+        this.purchases = purchases;
     }
 
     @GetMapping("/")
-    public String home() { return "home"; }
+    public String home(Model model) {
+        model.addAttribute("purchaseForm", new PurchaseForm());
+        model.addAttribute("purchases", purchases.all());
+        return "home";
+    }
+
+    @PostMapping("/purchases")
+    public String savePurchase(@ModelAttribute("purchaseForm") PurchaseForm form, BindingResult errors,
+                               Model model, RedirectAttributes redirect) {
+        purchases.save(form, errors);
+        if (errors.hasErrors()) {
+            model.addAttribute("purchases", purchases.all());
+            return "home";
+        }
+        redirect.addFlashAttribute("successMessage", "購入履歴を登録しました。");
+        return "redirect:/#purchase-history";
+    }
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {

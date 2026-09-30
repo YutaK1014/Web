@@ -44,3 +44,28 @@ CREATE TABLE IF NOT EXISTS app_settings (
     setting_key VARCHAR(50) NOT NULL PRIMARY KEY,
     setting_value VARCHAR(255) NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS purchases (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    item_name VARCHAR(100) NOT NULL,
+    purchased_date DATE NOT NULL,
+    amount INT NOT NULL,
+    store VARCHAR(100) NOT NULL DEFAULT '',
+    memo TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_purchases_date (purchased_date, id)
+);
+
+CREATE TABLE IF NOT EXISTS transaction_tags (
+    transaction_id BIGINT NOT NULL,
+    tag VARCHAR(30) NOT NULL,
+    PRIMARY KEY (transaction_id, tag),
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS purchase_tags (
+    purchase_id BIGINT NOT NULL,
+    tag VARCHAR(30) NOT NULL,
+    PRIMARY KEY (purchase_id, tag),
+    FOREIGN KEY (purchase_id) REFERENCES purchases(id) ON DELETE CASCADE
+);

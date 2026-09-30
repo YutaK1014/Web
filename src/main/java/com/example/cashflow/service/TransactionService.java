@@ -21,20 +21,27 @@ public class TransactionService {
     private final TransactionRepository repository;
     private final PhotoStorage photos;
     private final MarketplaceService marketplaces;
+    private final com.example.cashflow.repository.TagRepository tags;
 
-    public TransactionService(TransactionRepository repository, PhotoStorage photos, MarketplaceService marketplaces) {
+    public TransactionService(TransactionRepository repository, PhotoStorage photos, MarketplaceService marketplaces,
+                              com.example.cashflow.repository.TagRepository tags) {
         this.repository = repository;
         this.photos = photos;
         this.marketplaces = marketplaces;
+        this.tags = tags;
     }
 
     public List<Transaction> search(TransactionFilter filter) {
-        return repository.search(filter.getKeyword(), filter.getMarketplace(), filter.start(), filter.end());
+        var rows = repository.search(filter.getKeyword(), filter.getMarketplace(), filter.start(), filter.end());
+        rows.forEach(row -> row.setTags(tags.transactionTags(row.getId())));
+        String tag = filter.getTag() == null ? "" : filter.getTag().strip();
+        return tag.isEmpty() ? rows : rows.stream().filter(row -> row.getTags().contains(tag)).toList();
     }
 
     public Transaction get(long id) {
         Transaction row = repository.findById(id);
         if (row == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "取引が見つかりません。");
+        row.setTags(tags.transactionTags(id));
         return row;
     }
 
@@ -68,6 +75,8 @@ public class TransactionService {
         try {
             if (id == null) repository.insert(row);
             else if (repository.update(row) == 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            tags.clearTransaction(row.getId());
+            for (String tag : com.example.cashflow.dto.TagForm.parse(form.getTags())) tags.addTransaction(row.getId(), tag);
         } catch (RuntimeException exception) {
             if (!TransactionSynchronizationManager.isSynchronizationActive()) cleanup(newPhoto);
             throw exception;

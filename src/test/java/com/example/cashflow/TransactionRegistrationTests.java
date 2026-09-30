@@ -56,6 +56,8 @@ class TransactionRegistrationTests {
             .andExpect(content().string(containsString("販売日"))).andReturn();
         assertFalse(result.getResponse().getContentAsString().contains("name=\"token\""));
         assertNull(result.getRequest().getSession(false));
+        assertTrue(result.getResponse().getContentAsString().contains("data-rate=\"10.00\""),
+            "The browser needs the configured marketplace rate for its live preview");
     }
 
     MockMultipartHttpServletRequestBuilder valid(String url) {

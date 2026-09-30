@@ -21,10 +21,12 @@ public class TransactionForm {
     private String feeRate = "";
     private String soldDate = "";
     private String memo = "";
+    private String tags = "";
     private boolean removePhoto;
     private MultipartFile photo;
 
     public void validate(Errors errors) {
+        TagForm.validate(tags, errors);
         itemName = itemName == null ? "" : itemName.strip();
         customMarketplace = customMarketplace == null ? "" : customMarketplace.strip();
         if (itemName.isEmpty() || itemName.length() > 100)
@@ -78,6 +80,7 @@ public class TransactionForm {
         form.setFeeRate(row.getFeeRate().toPlainString());
         form.setSoldDate(row.getSoldDate().toString());
         form.setMemo(row.getMemo());
+        form.setTags(String.join(", ", row.getTags()));
         return form;
     }
 }

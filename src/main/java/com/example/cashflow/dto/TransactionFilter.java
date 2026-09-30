@@ -8,12 +8,15 @@ import org.springframework.validation.Errors;
 @Data
 public class TransactionFilter {
     private String keyword = "";
+    private String tag = "";
     private String marketplace = "";
     private String month = "";
     private String from = "";
     private String to = "";
 
     public void validate(Errors errors) {
+        tag = tag == null ? "" : tag.strip();
+        if (tag.length() > 30) errors.rejectValue("tag", "invalid", "検索タグは30文字以内で入力してください。");
         try {
             // Validate each original value before intersecting month and date bounds.
             if (!month.isBlank()) validateYear(YearMonth.parse(month).getYear());

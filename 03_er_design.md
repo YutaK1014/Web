@@ -44,6 +44,16 @@ erDiagram
         VARCHAR setting_key PK
         VARCHAR setting_value
     }
+
+    PURCHASES {
+        BIGINT id PK
+        VARCHAR item_name
+        DATE purchased_date
+        INT amount
+        VARCHAR store
+        TEXT memo
+        DATETIME created_at
+    }
 ```
 
 ## リレーション
@@ -51,4 +61,5 @@ erDiagram
 - 取引からユーザーへの参照は任意（0または1）。新規登録ではuser_idをNULLとする。
 - marketplace_settings は手数料率参照用
 - app_settingsは端数処理と月間利益目標を保存する。
+- purchasesはホーム画面の購入履歴を保存する独立したテーブル。transactionsとの関連・自動反映は行わない。
 - ログイン・所有者確認・ユーザー別データ分離は行わない。
