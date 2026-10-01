@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: mouke-memo-demo
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: demo
+      - key: TZ
+        value: Asia/Tokyo

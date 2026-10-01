@@ -1,5 +1,15 @@
 # 作業引き継ぎ（2026-09-30）
 
+## 2026-10-01：公開デモ構成・設計書更新
+
+- Render用Dockerfile・render.yamlとDockerだけで起動するcompose.demo.yamlを追加。
+- demoプロファイルはH2の一時DBを使用し、起動時に架空の売却3件・購入1件・タグ・設定を投入する。各画面に共有・リセット・実データ入力禁止の案内を表示する。
+- PORTへの追従、外部待受、DB疎通用 /healthz を追加。個人利用のMySQL構成を維持。
+- READMEと01〜06の設計書を現行実装に更新し、CODEX_INSTRUCTIONS.mdの旧ログイン前提も整合させた。
+- Maven verifyとDockerビルドで自動テスト33件成功（失敗・エラー・スキップ0）。ローカルログはtarget/deployment-verification.log。
+- 実際のRenderアカウント連携・GitHub反映・デプロイ・公開URL確認は未完了。READMEの公開URLは未発行と明記している。次の手順はdocs/deployment.md。
+- 以下は以前の作業記録。当時の「ローカル専用」やテスト件数を現在の仕様・検証結果として扱わない。
+
 ## 2026-09-30：再テスト・画面操作確認完了
 
 - 最新コードを再コンパイルして自動テスト18件が成功。画面確認での修正後も全18件成功（失敗・エラー・スキップ0）。ログは `target/verification-20260930.log`。

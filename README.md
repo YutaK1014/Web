@@ -1,54 +1,106 @@
-# もうけメモ 開発ドキュメント
+﻿# もうけメモ
 
-このフォルダには、Webアプリ「もうけメモ」の要件定義・設計情報をまとめています。
+**売った利益が、すぐわかる。** フリマで売却した商品の販売価格・手数料・送料・仕入価格から利益を計算し、月別・年間・サイト別に振り返るWebアプリです。購入履歴も独立して記録できます。
 
-## サービス概要
-「もうけメモ」は、メルカリ・ラクマ・Yahoo!フリマなどのフリマサイトで売却した商品の収支を管理するWebアプリケーションです。
+## 公開URL
 
-主な目的は以下です。
+**未発行（Renderへのデプロイ待ち）。** 現時点では公開済みではありません。デプロイ完了後、Renderが発行した実際のHTTPS URLをここへ記載します。
 
-- フリマ販売の利益を自動計算する
-- 複数フリマサイトの収支を一元管理する
-- 月別・年間・サイト別に収支を集計する
-- 老若男女が使いやすいシンプルなUIを提供する
+[Renderでデプロイ設定を開く](https://render.com/deploy?repo=https://github.com/YutaK1014/Web)
 
-## 技術構成
-- Java
-- Spring Boot
-- Thymeleaf
-- HTML / CSS / JavaScript
-- MySQL
-- Docker
-- Git / GitHub
+上のリンクは管理者向けです。この変更をGitHubへ反映した後に使用してください。公開後の閲覧者は公開URLを開くだけで利用でき、Java・Docker・DBの準備やログインは不要です。
 
-## ドキュメント一覧
-- `01_requirements.md` : 要件定義
-- `02_database_design.md` : DB・テーブル設計
-- `03_er_design.md` : ER設計
-- `04_screen_design.md` : 画面構成・画面遷移
-- `05_function_design.md` : 機能設計
-- `06_java_architecture.md` : Java / Spring Boot構成
-- `CODEX_INSTRUCTIONS.md` : CodeX向け開発指示
+## 主な機能
 
-## CodeXへの指示
-まず `CODEX_INSTRUCTIONS.md` と本READMEを読み、その後必要な設計書を参照してください。
+- 売却取引の登録・一覧・編集・削除、商品画像1枚の登録／置換／削除
+- サイト別の手数料率と端数処理による手数料・利益の自動計算
+- 商品名・サイト・タグ・販売月・期間で検索、検索結果のCSV出力
+- 今月のダッシュボード、月別・年間・サイト別集計、利益グラフ、月間利益目標
+- 購入履歴の登録・一覧・期間検索、購入／売却履歴へのタグ付けとタグ検索
+- ダークモード（ブラウザーに保存）
 
-## 現在の実装と起動方法
+対応サイトはメルカリ・ラクマ・Yahoo!フリマ・その他です。購入履歴は売却の仕入価格や利益に自動反映しません。購入履歴の編集はタグのみで、購入履歴の削除機能はありません。認証・ユーザー別データ分離・在庫管理・確定申告・外部API連携は未実装です。
 
-ユーザー指定によりログインなし・同じPCからの利用（127.0.0.1）です。
-取引の登録・一覧・編集・削除、画像、手数料・利益計算、検索・絞り込み、ダッシュボード、
-月別・年間・サイト別の集計とグラフ、CSV出力、月間利益目標、ダークモードを実装しています。
-ホーム画面では購入した商品名・購入日・金額・購入先・メモを購入履歴として登録・確認できます。
-購入履歴は売却取引とは別に保存され、収支集計には反映されません。
-購入・売却の両履歴にタグを付け、タグで検索できます。「衣類, プレゼント」のように入力してください。
-既存の購入履歴は「タグを編集」、売却取引は「編集」でタグを変更・解除できます。
-両履歴を「1か月以内」「3か月以内」「期間指定」で検索でき、タグ検索とも併用できます。
+## 使用技術
 
-1. `docker compose up -d db` でMySQLを起動します。
-2. Windowsでは `.\mvnw.cmd spring-boot:run` でアプリを起動します（Java 21）。
-3. `http://localhost:8080/` を開きます。
-4. 初回は「設定」で3サイトの手数料率と端数処理を設定します。
+| 分類 | 技術 |
+| --- | --- |
+| バックエンド | Java 21、Spring Boot 4.0.8、Spring MVC |
+| 画面 | Thymeleaf、HTML、CSS、JavaScript |
+| DBアクセス | MyBatis Spring Boot Starter 4.0.1 |
+| データベース | MySQL 8.0（個人利用）、H2 MySQL互換モード（公開デモ・テスト） |
+| 画像処理 | ImageIO、TwelveMonkeys WebP 3.12.0 |
+| ビルド・テスト | Maven Wrapper、JUnit、Spring Boot Test、MockMvc |
+| 配布 | Dockerのマルチステージビルド、Render Blueprint |
 
-テーブルは起動時に作成されます。既存取引は上書きしません。
-詳細と旧試作データの扱いは [操作・実装仕様](docs/transaction-list.md) を参照してください。
-自動テストは `.\mvnw.cmd test` です。テストはH2を使い、実際のMySQLデータを変更しません。
+## 公開デモの仕様
+
+`demo`プロファイルは外部DB不要です。起動時に架空の売却3件・購入1件・タグ・仮の手数料設定を用意し、すぐに登録や集計を試せます。画面に公開デモの案内を表示します。
+
+**データ・設定・アップロード画像は全閲覧者で共有されます。個人情報、実際の取引、私的な写真は入力しないでください。** DBはメモリー上にあり、再起動で初期サンプルに戻ります。Renderの画像保存領域も一時的です。手数料率は操作体験用の例で、各サイトの現行料金を保証しません。
+
+Renderの無料Webサービスは一定時間アクセスがないと休止し、次のアクセスで起動待ちが発生します。常時すぐに応答することが必要なら、有料プランの選定が必要です。[無料プランの公式仕様](https://render.com/docs/free)
+
+## 起動方法
+
+### Dockerだけでデモを起動
+
+Docker Desktop等を起動して、リポジトリのルートで実行します。JavaやMySQLの個別インストールは不要です。
+
+```sh
+docker compose -f compose.demo.yaml up --build -d
+```
+
+`http://localhost:8080/` を開きます。停止は `docker compose -f compose.demo.yaml down`。再起動すると入力したデモデータは消えます。初回ビルドでは依存関係をダウンロードしてテストを実行します。
+
+### Javaだけでデモを起動
+
+Java 21を用意し、Windowsでは次を実行します。
+
+```powershell
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=demo" "-Dspring-boot.run.arguments=--server.address=127.0.0.1"
+```
+
+macOS / Linuxでは `sh ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo -Dspring-boot.run.arguments=--server.address=127.0.0.1`。ブラウザーで `http://localhost:8080/` を開きます。
+
+### MySQLへ保存する個人利用
+
+Java 21とDockerを用意します。`demo`プロファイルを指定しない場合はこちらです。
+
+```powershell
+docker compose up -d db
+.\mvnw.cmd spring-boot:run
+```
+
+`http://localhost:8080/` を開き、最初に「設定」で3サイトの手数料率と端数処理を入力してください。MySQLの起動直後に接続できない場合は、`docker compose logs db` で起動完了を確認してからアプリを再起動します。
+
+この構成は同じPCからの単一利用者向けです。DBは既存の `pf-db-data` ボリューム、画像は `uploads/images/` に保存します。両方をバックアップしてください。起動時の `schema.sql` は不足テーブルを作成しますが、既存スキーマの移行はしません。ポート8080を他のアプリが使用中なら停止するか別ポートを指定します。
+
+### Renderへ公開（管理者）
+
+1. この変更を含むブランチをGitHubへpushします。
+2. [Render Dashboard](https://dashboard.render.com/) でGitHubを連携し、New → Blueprintからこのリポジトリと反映済みブランチを選択します。
+3. `render.yaml` を読み込み、Docker・Free・`SPRING_PROFILES_ACTIVE=demo` を確認してデプロイします。DBサービスの追加は不要です。
+4. Liveになったら、発行されたHTTPS URLでホーム・取引登録／編集／削除・検索・CSV・レポートを確認します。`/healthz` はDB疎通成功時に200と `{"status":"UP"}` を返します。
+5. このREADMEの「公開URL」を実際のURLへ置換します。サービス名からURLを推測して記載しないでください。
+
+構成と確認手順は [公開・運用手順](docs/deployment.md) を参照してください。
+
+## テスト
+
+```powershell
+.\mvnw.cmd -B -ntp verify
+```
+
+macOS / Linuxは `sh ./mvnw -B -ntp verify`。テスト専用H2を使用し、個人利用のMySQLには接続しません。入力検証、計算、CRUD、検索・CSV、画像処理、タグ、購入履歴、デモの初期化と画面表示、DBのヘルスチェックを確認します。
+
+## 設計資料
+
+- [要件定義](01_requirements.md)
+- [データベース設計](02_database_design.md) ／ [ER設計](03_er_design.md)
+- [画面設計](04_screen_design.md) ／ [機能設計](05_function_design.md)
+- [Java / Spring Boot構成](06_java_architecture.md)
+- [操作・既存データの扱い](docs/transaction-list.md)
+- [公開・運用手順](docs/deployment.md)
+
+正本はリポジトリのルートと `src/` です。`bin/` 配下の旧コピー・生成物はビルドや公開には使用しません。

@@ -13,7 +13,7 @@ public class ApplicationExceptionHandler {
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public String databaseFailure(DataAccessException exception, Model model) {
         LoggerFactory.getLogger(getClass()).error("データベース処理に失敗しました。", exception);
-        model.addAttribute("message", "データを読み書きできませんでした。MySQLの起動状態を確認して、もう一度お試しください。");
+        model.addAttribute("message", "データを読み書きできませんでした。しばらく待ってから、もう一度お試しください。");
         return "error";
     }
 

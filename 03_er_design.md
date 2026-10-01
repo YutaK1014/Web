@@ -1,5 +1,7 @@
 # ER設計
 
+2026-10-01更新。MySQLの個人利用とH2の公開デモで共通の論理構造を使用する。公開デモでは同じデータを全閲覧者が操作し、ユーザーごとの分離は行わない。初期データ・保存期間は02_database_design.mdを参照。
+
 ```mermaid
 erDiagram
     USERS |o--o{ TRANSACTIONS : legacy_reference

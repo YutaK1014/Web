@@ -1,4 +1,4 @@
--- ログインなしのローカル利用。既存のmarker・取引データは変更しません。
+-- 個人利用MySQLと公開デモH2の共通スキーマ。既存データは変更しません。
 
 
 CREATE TABLE IF NOT EXISTS users (
