@@ -76,11 +76,21 @@ public class PageController {
     }
 
     @GetMapping("/dashboard")
-    public String dashboard(Model model) {
+    public String dashboard(@RequestParam(required = false) String month, Model model) {
+        YearMonth now;
+        try {
+            now = month == null ? YearMonth.now() : YearMonth.parse(month);
+            if (now.getYear() < 1000 || now.getYear() > 9999) throw new java.time.DateTimeException("year");
+        } catch (java.time.DateTimeException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "表示月は1000年01月〜9999年12月で入力してください。");
+        }
         var all = reports.all();
-        YearMonth now = YearMonth.now();
         var current = all.stream().filter(t -> YearMonth.from(t.getSoldDate()).equals(now)).toList();
         model.addAttribute("month", now);
+        model.addAttribute("previousMonth", now.minusMonths(1));
+        model.addAttribute("nextMonth", now.plusMonths(1));
+        model.addAttribute("comparisons", reports.compare(all, now));
+        model.addAttribute("calendar", reports.calendar(all, now));
         model.addAttribute("summary", ReportService.summarize(current));
         model.addAttribute("recent", all.stream().limit(5).toList());
         model.addAttribute("chart", reports.chart(reports.monthly(all, now.getYear())));

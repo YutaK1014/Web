@@ -29,6 +29,24 @@ class DemoApplicationTests {
     @Autowired JdbcTemplate jdbc;
     @org.springframework.beans.factory.annotation.Value("${local.server.port}") int port;
 
+    @Test void dashboardRendersSelectedMonthComparisonCalendarAndDailyLinks() throws Exception {
+        var mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        String date = jdbc.queryForObject("SELECT sold_date FROM transactions WHERE id=1", java.sql.Date.class).toString();
+        mvc.perform(get("/dashboard").param("month", date.substring(0, 7)))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("前月との比較")))
+            .andExpect(content().string(containsString("平均利益")))
+            .andExpect(content().string(containsString("販売カレンダー")))
+            .andExpect(content().string(containsString("/transactions?from=" + date + "&amp;to=" + date)));
+        for (String month : new String[]{"2024-02", "1000-01", "9999-12"}) {
+            mvc.perform(get("/dashboard").param("month", month)).andExpect(status().isOk())
+                .andExpect(content().string(containsString("この月の販売はありません。")));
+        }
+        for (String month : new String[]{"", "wrong", "2026-13", "0999-12", "10000-01"}) {
+            mvc.perform(get("/dashboard").param("month", month)).andExpect(status().isBadRequest());
+        }
+    }
+
     @Test void firstPostBehindHttpsProxyRedirectsWithoutUrlSessionId() throws Exception {
         try (var client = HttpClient.newHttpClient()) {
             var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/settings"))

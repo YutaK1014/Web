@@ -2,13 +2,47 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head}"></head>
 <body><main class=""><nav th:replace="~{fragments :: nav}"></nav>
-<h1>ダッシュボード</h1><h2 th:text="${month + ' の収支'}"></h2>
+<h1>ダッシュボード</h1>
+<form class="filters" method="get" th:action="@{/dashboard}">
+<label for="month">表示月</label><input type="month" id="month" name="month" min="1000-01" max="9999-12" th:value="${month}" required>
+<button class="button" type="submit">表示する</button>
+<div class="month-navigation">
+<a th:if="${previousMonth.year >= 1000}" th:href="@{/dashboard(month=${previousMonth})}">前の月</a>
+<a th:href="@{/dashboard}">今月</a>
+<a th:if="${nextMonth.year <= 9999}" th:href="@{/dashboard(month=${nextMonth})}">次の月</a>
+</div></form>
+<h2 th:text="${month + ' の収支'}"></h2>
 <section th:replace="~{fragments :: summary(${summary})}"></section>
+<h2>前月との比較</h2>
+<p class="hint">選択月と前月の各月全体に登録された取引を比較します。今月は登録済み分の集計です。平均利益は利益÷販売件数を1円単位に四捨五入し、販売0件の月は0円として表示します。</p>
+<div class="table-container" tabindex="0">
+<table class="comparison-table"><caption th:text="${month + ' と ' + previousMonth + ' の比較（差は選択月 − 前月）'}"></caption>
+<thead><tr><th scope="col">項目</th><th scope="col">選択月</th><th scope="col">前月</th><th scope="col">前月との差</th></tr></thead>
+<tbody><tr th:each="item : ${comparisons}">
+<th scope="row" th:text="${item.label}"></th>
+<td class="amount" th:classappend="${item.current < 0} ? 'negative'" th:text="${#numbers.formatInteger(item.current,1,'COMMA') + item.unit}"></td>
+<td class="amount" th:classappend="${item.previous < 0} ? 'negative'" th:text="${#numbers.formatInteger(item.previous,1,'COMMA') + item.unit}"></td>
+<td class="amount" th:classappend="${item.difference() < 0} ? 'negative'" th:text="${(item.difference() > 0 ? '+' : '') + #numbers.formatInteger(item.difference(),1,'COMMA') + item.unit}"></td>
+</tr></tbody></table></div>
+<h2>販売カレンダー</h2>
+<p class="hint">販売日ごとの件数と合計利益です。売れた日を選ぶと、その日の取引を確認できます。</p>
+<p th:if="${summary.count == 0}">この月の販売はありません。</p>
+<div class="table-container" tabindex="0">
+<table class="sales-calendar"><caption th:text="${month + ' の販売日と利益'}"></caption>
+<thead><tr><th scope="col">日</th><th scope="col">月</th><th scope="col">火</th><th scope="col">水</th><th scope="col">木</th><th scope="col">金</th><th scope="col">土</th></tr></thead>
+<tbody><tr th:each="week : ${calendar}"><td th:each="day : ${week}" th:classappend="${day.count > 0} ? 'has-sales'">
+<th:block th:if="${day.date != null}">
+<a th:if="${day.count > 0}" th:href="@{/transactions(from=${day.date},to=${day.date})}" th:aria-label="${day.date + '：' + day.count + '件、利益' + day.profit + '円の取引を見る'}">
+<time th:datetime="${day.date}" th:text="${day.date.dayOfMonth + '日'}"></time>
+<span th:text="${day.count + '件'}"></span>
+<strong th:classappend="${day.profit < 0} ? 'negative'" th:text="${#numbers.formatInteger(day.profit,1,'COMMA') + '円'}"></strong></a>
+<th:block th:if="${day.count == 0}"><time th:datetime="${day.date}" th:text="${day.date.dayOfMonth + '日'}"></time><span class="hint">販売なし</span></th:block>
+</th:block></td></tr></tbody></table></div>
 <p th:if="${goal != null}">月間利益目標：<strong th:text="${#numbers.formatInteger(goal,1,'COMMA') + '円'}"></strong>
 <span th:text="${summary.profit >= goal ? '達成しました' : 'あと ' + #numbers.formatInteger(goal - summary.profit,1,'COMMA') + '円'}"></span></p>
 <h2>最近の取引</h2><p th:if="${#lists.isEmpty(recent)}">取引はまだありません。<a th:href="@{/transactions/new}">最初の取引を登録する</a></p>
 <ul class="recent"><li th:each="row : ${recent}"><a th:href="@{/transactions/{id}/edit(id=${row.id})}" th:text="${row.itemName}"></a>
 <span th:text="${row.soldDate}"></span><strong th:text="${#numbers.formatInteger(row.profit,1,'COMMA') + '円'}"></strong></li></ul>
-<h2>今年の月別利益</h2><section th:replace="~{fragments :: chart(${chart})}"></section>
-<h2>今月のサイト別集計</h2><div th:replace="~{fragments :: groups(${marketplaces}, '今月のサイト別収支')}"></div>
+<h2 th:text="${month.year + '年の月別利益'}"></h2><section th:replace="~{fragments :: chart(${chart})}"></section>
+<h2>選択月のサイト別集計</h2><div th:replace="~{fragments :: groups(${marketplaces}, '選択月のサイト別収支')}"></div>
 </main></body></html>
