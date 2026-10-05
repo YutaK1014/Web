@@ -1,6 +1,6 @@
 # Java / Spring Boot設計
 
-2026-10-01更新。現在のパッケージ・クラス構成と公開デモの起動方式を示す。
+2026-10-05更新。現在のパッケージ・クラス構成と公開用demoの起動方式を示す。ローカル検証は完了し、Renderへの実デプロイ・公開URL発行は未完了。
 
 ## 構成
 
@@ -98,6 +98,7 @@ MyBatisのMapperとSQLアノテーションでDBを操作する。
 - PurchaseFilter：DateRangeFilterを継承し、購入履歴のタグ条件も検証する。TransactionFilterも同じ期間処理を利用する。
 
 - TagForm：共通タグ入力の分割・前後空白除去・重複除去と上限検証。購入タグ編集の入力DTOも兼ねる。
+- TagForm.parseはnull・String.isBlankを先に判定する。該当する入力は長さによらず空一覧とし、それ以外だけ分割前の1,000文字上限を検証する。画面のタグ入力欄にはmaxlength=1000を指定する。
 - TagRepository：購入・売却のタグ取得・削除・追加。各Serviceから履歴保存と同じトランザクション内で呼ぶ。
 - TransactionFilter.tag：売却検索・CSVのタグ条件。購入検索はPageControllerでタグ条件を受け付ける。
 - TagHistoryTests：両履歴のタグ登録・編集・解除、完全一致と複合条件、CSV、入力制限、エスケープ、削除時の連動を確認する。
@@ -124,8 +125,9 @@ MyBatisのMapperとSQLアノテーションでDBを操作する。
 - ImageIOで内容を検証しPNGに変換する。WebPはTwelveMonkeys ImageIOで読み込む。
 - 保存先の初期値はuploads/images/。app.photos.directoryで変更可能。
 - UUIDのファイル名を用い、DBには/images/から始まるパスを保存する。
-- リクエスト全体は6MB以下。自動縮小はしない。
+- multipartのリクエスト全体は6MB以下（spring.servlet.multipart.max-request-size）。全POST共通の制限ではない。自動縮小はしない。
 - DBのトランザクション完了に合わせて置換・削除・ロールバック時の画像を処理する。
+- アプリ起動時の画像一括削除・未参照画像の定期削除は実装しない。同じDockerコンテナの再起動ではH2のデータだけが初期化され、画像ファイルは残る。
 
 ## テスト
 
@@ -144,4 +146,5 @@ DemoApplicationTestsはdemoプロファイルをランダムポートで起動�
 - application-demo.properties：H2メモリーDB（MySQL互換）、最大5接続、H2コンソール無効、demo-data.sql指定、画面用app.demo=true。
 - demo-data.sql：共通schema.sqlの後に架空の取引・購入・タグ・設定を投入する。通常起動では読まない。
 - デモ表示は共通fragments.htmlでapp.demoを参照する。公開環境に認証や個人データ隔離はない。
+- home.htmlの初回設定案内にはプロファイル・設定済み状態による表示条件がなく、demoでも常に表示する。
 - bin/の旧コピー・生成物はMaven/Dockerの入力に含めない。

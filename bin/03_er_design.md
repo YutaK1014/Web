@@ -1,47 +1,7 @@
-# ER設計
+# 現行文書への参照
 
-```mermaid
-erDiagram
-    USERS ||--o{ TRANSACTIONS : owns
+2026-10-05改訂。この場所にあった旧文書は、ルートの現行文書へ統一しました。
 
-    USERS {
-        BIGINT id PK
-        VARCHAR username
-        VARCHAR email
-        VARCHAR password
-        DATETIME created_at
-        DATETIME updated_at
-    }
+[現行の 03_er_design.md を開く](../03_er_design.md)
 
-    TRANSACTIONS {
-        BIGINT id PK
-        BIGINT user_id FK
-        VARCHAR item_name
-        VARCHAR marketplace
-        VARCHAR custom_marketplace
-        INT selling_price
-        DECIMAL fee_rate
-        INT selling_fee
-        INT shipping_cost
-        INT purchase_price
-        INT profit
-        DATE sold_date
-        VARCHAR image_path
-        TEXT memo
-        DATETIME created_at
-        DATETIME updated_at
-    }
-
-    MARKETPLACE_SETTINGS {
-        BIGINT id PK
-        VARCHAR marketplace_name
-        DECIMAL fee_rate
-        DATETIME created_at
-        DATETIME updated_at
-    }
-```
-
-## リレーション
-- 1ユーザーは複数取引を持つ
-- 各取引は必ず1ユーザーに属する
-- marketplace_settings は手数料率参照用
+このファイルは参照案内です。現在の仕様と公開状況はリンク先を参照し、仕様の改訂はルートの正本で行ってください。
