@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head}"></head>
+<body><main class="form-page"><nav th:replace="~{fragments :: nav}"></nav>
+<header><h1 th:text="${transaction.returned ? '返品費用を編集' : '返品を登録'}"></h1></header>
+<h2><span th:text="${transaction.itemName}"></span> <span class="return-badge" th:if="${transaction.returned}">返品</span></h2>
+<p><span th:text="${transaction.platformName}"></span>・販売日 <span th:text="${transaction.soldDate}"></span></p>
+<img th:if="${transaction.photoUrl}" class="photo-preview" th:src="@{${transaction.photoUrl}}" th:alt="${transaction.itemName + 'の写真'}">
+<p>取引を削除せず、返品として残します。元の売上・手数料・送料・仕入価格は集計から外し、返品費用だけを損失として計上します。</p>
+<p class="hint">集計・検索の日付は元の販売日です。</p>
+<form method="post" th:action="@{/transactions/{id}/return(id=${transaction.id})}" th:object="${form}">
+<div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
+<div class="field"><label for="returnCost">返品にかかった費用の合計（円） <span class="required">必須</span></label>
+<input type="number" th:field="*{returnCost}" min="0" max="1000000000" step="1" required aria-describedby="return-cost-help">
+<p class="hint" id="return-cost-help">返送料、返金されなかった発送送料・手数料など、実際に負担した費用をすべて含めてください。費用がなければ0円を入力してください。保存し直すと合計額を置き換えます。</p></div>
+<div class="form-actions"><button type="submit" class="button" th:text="${transaction.returned ? '返品費用を更新する' : '返品として保存する'}"></button><a th:href="@{/transactions}">キャンセル</a></div>
+</form>
+<details><summary>元の取引情報</summary>
+<dl><dt>販売価格</dt><dd th:text="${#numbers.formatInteger(transaction.sellingPrice,1,'COMMA') + '円'}"></dd>
+<dt>販売手数料</dt><dd th:text="${#numbers.formatInteger(transaction.sellingFee,1,'COMMA') + '円'}"></dd>
+<dt>送料</dt><dd th:text="${#numbers.formatInteger(transaction.shippingCost,1,'COMMA') + '円'}"></dd>
+<dt>仕入価格</dt><dd th:text="${#numbers.formatInteger(transaction.purchasePrice == null ? 0 : transaction.purchasePrice,1,'COMMA') + '円'}"></dd>
+<dt>メモ</dt><dd th:text="${transaction.memo}"></dd>
+<dt>タグ</dt><dd th:text="${#strings.listJoin(transaction.tags, '、')}"></dd></dl>
+</details>
+</main></body></html>

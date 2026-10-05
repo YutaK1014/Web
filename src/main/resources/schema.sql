@@ -32,6 +32,12 @@ CREATE TABLE IF NOT EXISTS transactions (
     INDEX idx_transactions_sold_date (sold_date, id)
 );
 
+CREATE TABLE IF NOT EXISTS transaction_returns (
+    transaction_id BIGINT NOT NULL PRIMARY KEY,
+    return_cost INT NOT NULL,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS marketplace_settings (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     marketplace_name VARCHAR(50) NOT NULL UNIQUE,

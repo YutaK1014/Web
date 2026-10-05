@@ -8,7 +8,13 @@
 erDiagram
     USERS |o--o{ TRANSACTIONS : legacy_reference
     TRANSACTIONS ||--o{ TRANSACTION_TAGS : tagged
+    TRANSACTIONS ||--o| TRANSACTION_RETURNS : returned
     PURCHASES ||--o{ PURCHASE_TAGS : tagged
+
+    TRANSACTION_RETURNS {
+        BIGINT transaction_id PK,FK
+        INT return_cost
+    }
 
     TRANSACTION_TAGS {
         BIGINT id PK

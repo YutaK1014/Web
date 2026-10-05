@@ -21,8 +21,16 @@ public class Transaction {
     private String imagePath;
     private String memo;
     private List<String> tags = List.of();
+    private Integer returnCost;
+
+    public boolean isReturned() { return returnCost != null; }
+    public int getRecordedSales() { return isReturned() ? 0 : sellingPrice; }
+    public int getRecordedFees() { return isReturned() ? 0 : sellingFee; }
+    public int getRecordedShipping() { return isReturned() ? 0 : shippingCost; }
+    public int getRecordedPurchases() { return isReturned() || purchasePrice == null ? 0 : purchasePrice; }
 
     public long getProfit() {
+        if (isReturned()) return -(long) returnCost;
         return (long) sellingPrice - sellingFee - shippingCost - (purchasePrice == null ? 0 : purchasePrice);
     }
 

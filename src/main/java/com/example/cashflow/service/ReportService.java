@@ -11,13 +11,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class ReportService {
-    public record Summary(long sales, long profit, long shipping, long fees, long purchases, long count) {}
+    public record Summary(long sales, long profit, long shipping, long fees, long purchases, long count,
+                          long returnCosts, long returnCount) {}
     public record Group(String label, Summary summary) {}
     public record Bar(String label, long profit, double width) {}
     public record Comparison(String label, String unit, long current, long previous) {
         public long difference() { return current - previous; }
     }
-    public record CalendarDay(LocalDate date, long profit, long count) {}
+    public record CalendarDay(LocalDate date, long profit, long count, long returnCount) {}
 
     public Summary monthSummary(List<Transaction> rows, YearMonth month) {
         return summarize(rows.stream().filter(t -> YearMonth.from(t.getSoldDate()).equals(month)).toList());
@@ -44,13 +45,13 @@ public class ReportService {
         }
         List<CalendarDay> cells = new ArrayList<>();
         int offset = month.atDay(1).getDayOfWeek().getValue() % 7;
-        for (int i = 0; i < offset; i++) cells.add(new CalendarDay(null, 0, 0));
+        for (int i = 0; i < offset; i++) cells.add(new CalendarDay(null, 0, 0, 0));
         for (int day = 1; day <= month.lengthOfMonth(); day++) {
             LocalDate date = month.atDay(day);
             var summary = summarize(daily.getOrDefault(date, List.of()));
-            cells.add(new CalendarDay(date, summary.profit(), summary.count()));
+            cells.add(new CalendarDay(date, summary.profit(), summary.count(), summary.returnCount()));
         }
-        while (cells.size() % 7 != 0) cells.add(new CalendarDay(null, 0, 0));
+        while (cells.size() % 7 != 0) cells.add(new CalendarDay(null, 0, 0, 0));
         List<List<CalendarDay>> weeks = new ArrayList<>();
         for (int i = 0; i < cells.size(); i += 7) weeks.add(List.copyOf(cells.subList(i, i + 7)));
         return weeks;
@@ -61,15 +62,19 @@ public class ReportService {
     public List<Transaction> all() { return repository.search("", "", null, null); }
 
     public static Summary summarize(List<Transaction> rows) {
-        long sales = 0, profit = 0, shipping = 0, fees = 0, purchases = 0;
+        long sales = 0, profit = 0, shipping = 0, fees = 0, purchases = 0, returnCosts = 0, returnCount = 0;
         for (Transaction row : rows) {
-            sales += row.getSellingPrice();
+            sales += row.getRecordedSales();
             profit += row.getProfit();
-            shipping += row.getShippingCost();
-            fees += row.getSellingFee();
-            purchases += row.getPurchasePrice() == null ? 0 : row.getPurchasePrice();
+            shipping += row.getRecordedShipping();
+            fees += row.getRecordedFees();
+            purchases += row.getRecordedPurchases();
+            if (row.isReturned()) {
+                returnCosts += row.getReturnCost();
+                returnCount++;
+            }
         }
-        return new Summary(sales, profit, shipping, fees, purchases, rows.size());
+        return new Summary(sales, profit, shipping, fees, purchases, rows.size() - returnCount, returnCosts, returnCount);
     }
 
     public List<Group> monthly(List<Transaction> rows, int year) {

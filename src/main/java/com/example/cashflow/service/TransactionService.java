@@ -2,6 +2,7 @@ package com.example.cashflow.service;
 
 import com.example.cashflow.entity.Transaction;
 import com.example.cashflow.dto.TransactionForm;
+import com.example.cashflow.dto.ReturnForm;
 import com.example.cashflow.dto.TransactionFilter;
 import com.example.cashflow.repository.TransactionRepository;
 import com.example.cashflow.repository.TagRepository;
@@ -52,7 +53,9 @@ public class TransactionService {
         var errors = new BeanPropertyBindingResult(form, "form");
         form.validate(errors);
         if (errors.hasErrors()) throw new IllegalArgumentException(errors.getAllErrors().getFirst().getDefaultMessage());
+        if (id != null) repository.lockById(id);
         Transaction row = id == null ? new Transaction() : get(id);
+        if (row.isReturned()) throw new IllegalArgumentException("返品済みの取引は「返品費用を編集」から変更してください。");
         String oldPhoto = row.getImagePath();
         row.setItemName(form.getItemName());
         row.setMarketplace(form.getMarketplace());
@@ -84,6 +87,15 @@ public class TransactionService {
             throw exception;
         }
         if (oldPhoto != null && !oldPhoto.equals(row.getImagePath())) afterCommitCleanup(oldPhoto);
+    }
+
+    @Transactional
+    public void saveReturn(long id, ReturnForm form) {
+        var errors = new BeanPropertyBindingResult(form, "form");
+        form.validate(errors);
+        if (errors.hasErrors()) throw new IllegalArgumentException(errors.getAllErrors().getFirst().getDefaultMessage());
+        if (repository.lockById(id) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "取引が見つかりません。");
+        repository.saveReturn(id, Integer.parseInt(form.getReturnCost()));
     }
 
     @Transactional

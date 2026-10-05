@@ -9,7 +9,8 @@ import org.apache.ibatis.annotations.*;
 public interface TransactionRepository {
     @Select("""
         <script>
-        SELECT * FROM transactions WHERE 1=1
+        SELECT t.*, r.return_cost FROM transactions t
+        LEFT JOIN transaction_returns r ON r.transaction_id=t.id WHERE 1=1
         <if test="keyword != null and keyword != ''">AND LOCATE(#{keyword}, item_name) &gt; 0</if>
         <if test="marketplace != null and marketplace != ''">AND marketplace = #{marketplace}</if>
         <if test="from != null">AND sold_date &gt;= #{from}</if>
@@ -20,8 +21,17 @@ public interface TransactionRepository {
     List<Transaction> search(@Param("keyword") String keyword, @Param("marketplace") String marketplace,
                             @Param("from") LocalDate from, @Param("to") LocalDate to);
 
-    @Select("SELECT * FROM transactions WHERE id=#{id}")
+    @Select("SELECT t.*, r.return_cost FROM transactions t LEFT JOIN transaction_returns r ON r.transaction_id=t.id WHERE t.id=#{id}")
     Transaction findById(long id);
+
+    @Select("SELECT id FROM transactions WHERE id=#{id} FOR UPDATE")
+    Long lockById(long id);
+
+    @Insert("""
+        INSERT INTO transaction_returns(transaction_id, return_cost) VALUES(#{id}, #{cost})
+        ON DUPLICATE KEY UPDATE return_cost=#{cost}
+        """)
+    void saveReturn(@Param("id") long id, @Param("cost") int cost);
 
     @Select("SELECT COUNT(*) FROM transactions WHERE image_path=#{path}")
     long countImageReferences(String path);

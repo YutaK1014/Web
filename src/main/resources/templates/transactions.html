@@ -22,18 +22,23 @@
 <section class="empty" th:if="${#lists.isEmpty(transactions)}"><h2>該当する取引はありません</h2><p>新規登録するか、検索条件を変更してください。</p></section>
 <div class="table-container" tabindex="0" role="region" aria-label="取引一覧" th:if="${not #lists.isEmpty(transactions)}">
 <table><caption>販売日が新しい順に表示しています。</caption>
-<thead><tr><th>写真</th><th>商品名</th><th>サイト</th><th>販売価格</th><th>販売手数料</th><th>送料</th><th>利益</th><th>販売日</th><th>操作</th></tr></thead>
+<thead><tr><th>写真</th><th>商品名</th><th>サイト</th><th>販売価格</th><th>販売手数料</th><th>送料</th><th>返品費用</th><th>利益</th><th>販売日</th><th>操作</th></tr></thead>
 <tbody><tr th:each="transaction : ${transactions}">
 <td><img class="photo" th:if="${transaction.photoUrl != null}" th:src="@{${transaction.photoUrl}}" th:alt="${transaction.itemName + 'の写真'}" loading="lazy"><span class="no-photo" th:if="${transaction.photoUrl == null}">写真なし</span></td>
 <th scope="row" class="item-name"><span th:text="${transaction.itemName}"></span>
+<span class="return-badge" th:if="${transaction.returned}">返品</span>
 <div class="tag-list"><a class="tag" th:each="label : ${transaction.tags}" th:text="${label}"
 th:href="@{/transactions(tag=${label},keyword=${filter.keyword},marketplace=${filter.marketplace},month=${filter.month},period=${filter.period},from=${filter.from},to=${filter.to})}"></a></div></th><td th:text="${transaction.platformName}"></td>
-<td class="amount" th:text="${#numbers.formatInteger(transaction.sellingPrice,1,'COMMA') + '円'}"></td>
-<td class="amount" th:text="${#numbers.formatInteger(transaction.sellingFee,1,'COMMA') + '円'}"></td>
-<td class="amount" th:text="${#numbers.formatInteger(transaction.shippingCost,1,'COMMA') + '円'}"></td>
+<td class="amount" th:text="${#numbers.formatInteger(transaction.recordedSales,1,'COMMA') + '円'}"></td>
+<td class="amount" th:text="${#numbers.formatInteger(transaction.recordedFees,1,'COMMA') + '円'}"></td>
+<td class="amount" th:text="${#numbers.formatInteger(transaction.recordedShipping,1,'COMMA') + '円'}"></td>
+<td class="amount" th:text="${transaction.returned ? #numbers.formatInteger(transaction.returnCost,1,'COMMA') + '円' : '—'}"></td>
 <td class="amount profit" th:classappend="${transaction.profit < 0} ? 'negative'" th:text="${#numbers.formatInteger(transaction.profit,1,'COMMA') + '円'}"></td>
 <td class="nowrap" th:text="${transaction.soldDate}"></td>
-<td class="nowrap"><a th:href="@{/transactions/{id}/edit(id=${transaction.id})}">編集</a> <a th:href="@{/transactions/{id}/delete(id=${transaction.id})}">削除</a></td>
+<td class="nowrap"><a th:unless="${transaction.returned}" th:href="@{/transactions/{id}/edit(id=${transaction.id})}">編集</a>
+<a th:href="@{/transactions/{id}/return(id=${transaction.id})}" th:text="${transaction.returned ? '返品費用を編集' : '返品を登録'}"></a>
+<a th:href="@{/transactions/{id}/delete(id=${transaction.id})}">削除</a></td>
 </tr></tbody></table></div>
 <p class="note">利益 = 販売価格 − 販売手数料 − 送料 − 仕入価格。仕入価格が未入力の場合は0円です。</p>
+<p class="note">返品は売上・販売件数から外し、返品費用だけを損失として元の販売日に計上します。元の取引情報は「返品費用を編集」で確認できます。</p>
 </main></body></html>

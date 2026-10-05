@@ -94,6 +94,12 @@ MyBatisのMapperとSQLアノテーションでDBを操作する。
 
 ## DTO・設定
 
+- ReturnForm：返品費用の必須・整数・範囲検証。TransactionControllerのGET/POST `/transactions/{id}/return`とTransactionService.saveReturnで扱う。
+- TransactionRepository：transaction_returnsをLEFT JOINして返品費用を取得し、lockById・saveReturnで既存取引をロックして費用をUPSERTする。
+- Transaction：returnCostがNULL以外なら返品。getRecordedSales/Fees/Shipping/Purchasesは返品時0、getProfitは返品費用のマイナスを返す。元の金額のgetterは保持する。
+- ReportService.Summaryは返品費用・返品件数も保持する。CalendarDayは販売件数と返品件数を区別する。
+- TransactionReturnTests：費用だけの保存・元データ保持・0円・更新・重複送信・入力不正・404・検索/CSV/集計/カレンダー・削除連動を確認する。
+
 - DateRangeFilter：期間プリセット・開始日・終了日の共通検証と日付範囲計算。リクエスト単位で基準日を固定する。
 - PurchaseFilter：DateRangeFilterを継承し、購入履歴のタグ条件も検証する。TransactionFilterも同じ期間処理を利用する。
 

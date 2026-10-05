@@ -1,5 +1,6 @@
 :root { font-family: "Yu Gothic", "Meiryo", sans-serif; color: #243c37; background: #f4f7f5; }
 * { box-sizing: border-box; }
+.return-badge { display: inline-block; padding: 2px 8px; border: 1px solid currentColor; border-radius: 4px; font-size: .85rem; font-weight: bold; white-space: nowrap; }
 body { margin: 0; }
 main { max-width: 1180px; margin: 0 auto; padding: 40px 24px; }
 .brand { color: #17694e; font-weight: bold; }

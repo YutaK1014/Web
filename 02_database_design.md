@@ -50,6 +50,12 @@ DBの初期化と画像ファイルの寿命は別である。アプリ起動時
 | created_at | DATETIME | NO |  | 登録日時 |
 | updated_at | DATETIME | NO |  | 更新日時 |
 
+## transaction_returns（返品）
+
+transactionsと0または1対1。transaction_id（BIGINT、主キー・外部キー）とreturn_cost（INT、NOT NULL）を保存する。取引削除時はON DELETE CASCADEで削除する。
+レコードの存在が返品を表すため、費用0円も返品として識別できる。不足テーブルを起動時に作成し、既存transactionsのスキーマ・データ変更は不要。
+返品登録・費用更新は取引行をロックして同一トランザクションでUPSERTする。元のtransactions.profitを含む販売情報は保持するが、表示・集計は返品費用のマイナスを使用する。
+
 ## marketplace_settings
 
 | カラム | 型 | NULL | 制約 | 説明 |

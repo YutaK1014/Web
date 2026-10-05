@@ -20,18 +20,22 @@
 <div><span>送料</span><strong th:text="${#numbers.formatInteger(summary.shipping,1,'COMMA') + '円'}"></strong></div>
 <div><span>販売手数料</span><strong th:text="${#numbers.formatInteger(summary.fees,1,'COMMA') + '円'}"></strong></div>
 <div><span>仕入価格</span><strong th:text="${#numbers.formatInteger(summary.purchases,1,'COMMA') + '円'}"></strong></div>
-<div><span>取引件数</span><strong th:text="${summary.count + '件'}"></strong></div>
+<div><span>販売件数</span><strong th:text="${summary.count + '件'}"></strong></div>
+<div><span>返品費用</span><strong th:text="${#numbers.formatInteger(summary.returnCosts,1,'COMMA') + '円'}"></strong></div>
+<div><span>返品件数</span><strong th:text="${summary.returnCount + '件'}"></strong></div>
 </section>
 <div th:fragment="groups(groups,caption)" class="table-container" tabindex="0">
 <table><caption th:text="${caption}"></caption>
-<thead><tr><th>区分</th><th>売上</th><th>利益</th><th>送料</th><th>販売手数料</th><th>仕入価格</th><th>件数</th></tr></thead>
+<thead><tr><th>区分</th><th>売上</th><th>利益</th><th>送料</th><th>販売手数料</th><th>仕入価格</th><th>販売件数</th><th>返品費用</th><th>返品件数</th></tr></thead>
 <tbody><tr th:each="group : ${groups}"><th scope="row" th:text="${group.label}"></th>
 <td class="amount" th:text="${#numbers.formatInteger(group.summary.sales,1,'COMMA') + '円'}"></td>
 <td class="amount" th:classappend="${group.summary.profit < 0} ? 'negative'" th:text="${#numbers.formatInteger(group.summary.profit,1,'COMMA') + '円'}"></td>
 <td class="amount" th:text="${#numbers.formatInteger(group.summary.shipping,1,'COMMA') + '円'}"></td>
 <td class="amount" th:text="${#numbers.formatInteger(group.summary.fees,1,'COMMA') + '円'}"></td>
 <td class="amount" th:text="${#numbers.formatInteger(group.summary.purchases,1,'COMMA') + '円'}"></td>
-<td class="amount" th:text="${group.summary.count}"></td></tr></tbody></table>
+<td class="amount" th:text="${group.summary.count}"></td>
+<td class="amount" th:text="${#numbers.formatInteger(group.summary.returnCosts,1,'COMMA') + '円'}"></td>
+<td class="amount" th:text="${group.summary.returnCount}"></td></tr></tbody></table>
 <p th:if="${#lists.isEmpty(groups)}" class="hint">対象の取引はありません。</p></div>
 <section th:fragment="chart(chart)" class="chart" aria-label="月別利益グラフ">
 <p class="hint">棒の長さは利益・損失の大きさです。赤は赤字を表します。</p>

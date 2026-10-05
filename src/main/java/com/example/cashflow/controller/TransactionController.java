@@ -1,6 +1,7 @@
 package com.example.cashflow.controller;
 
 import com.example.cashflow.dto.TransactionForm;
+import com.example.cashflow.dto.ReturnForm;
 import com.example.cashflow.dto.TransactionFilter;
 import com.example.cashflow.service.TransactionService;
 import com.example.cashflow.service.MarketplaceService;
@@ -50,6 +51,7 @@ public class TransactionController {
 
     @GetMapping("/transactions/{id}/edit")
     public String editForm(@PathVariable long id, Model model) {
+        if (service.get(id).isReturned()) return "redirect:/transactions/" + id + "/return";
         model.addAttribute("form", TransactionForm.from(service.get(id)));
         return prepareForm(id, model);
     }
@@ -95,6 +97,36 @@ public class TransactionController {
         return prepareForm(id, model);
     }
 
+    @GetMapping("/transactions/{id}/return")
+    public String returnForm(@PathVariable long id, Model model) {
+        var row = service.get(id);
+        var form = new ReturnForm();
+        if (row.isReturned()) form.setReturnCost(row.getReturnCost().toString());
+        model.addAttribute("form", form);
+        model.addAttribute("transaction", row);
+        return "transaction-return";
+    }
+
+    @PostMapping("/transactions/{id}/return")
+    public String saveReturn(@PathVariable long id, @ModelAttribute("form") ReturnForm form,
+                             BindingResult errors, Model model, HttpServletResponse response,
+                             RedirectAttributes redirect) {
+        model.addAttribute("transaction", service.get(id));
+        form.validate(errors);
+        if (!errors.hasErrors()) {
+            try {
+                service.saveReturn(id, form);
+                redirect.addFlashAttribute("successMessage", "返品費用を保存しました。取引は返品として残しています。");
+                return "redirect:/transactions";
+            } catch (DataAccessException exception) {
+                LoggerFactory.getLogger(getClass()).error("返品費用の保存に失敗しました。", exception);
+                response.setStatus(503);
+                errors.reject("save", "保存できませんでした。しばらく待ってから再度お試しください。");
+            }
+        }
+        return "transaction-return";
+    }
+
     @GetMapping("/transactions/{id}/delete")
     public String confirmDelete(@PathVariable long id, Model model) {
         model.addAttribute("transaction", service.get(id));
@@ -118,13 +150,15 @@ public class TransactionController {
         var rows = service.search(filter);
         response.setContentType("text/csv;charset=UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=transactions.csv");
-        StringBuilder csv = new StringBuilder("\uFEFF商品名,サイト,販売価格,手数料率(%),販売手数料,送料,仕入価格,利益,販売日,メモ,タグ\r\n");
+        StringBuilder csv = new StringBuilder("\uFEFF商品名,サイト,販売価格,手数料率(%),販売手数料,送料,仕入価格,利益,販売日,メモ,タグ,状態,返品費用\r\n");
         for (var row : rows) {
             csv.append(csvText(row.getItemName())).append(',').append(csvText(row.getPlatformName())).append(',')
-                .append(row.getSellingPrice()).append(',').append(row.getFeeRate()).append(',').append(row.getSellingFee()).append(',')
-                .append(row.getShippingCost()).append(',').append(row.getPurchasePrice() == null ? 0 : row.getPurchasePrice()).append(',')
+                .append(row.getRecordedSales()).append(',').append(row.getFeeRate()).append(',').append(row.getRecordedFees()).append(',')
+                .append(row.getRecordedShipping()).append(',').append(row.getRecordedPurchases()).append(',')
                 .append(row.getProfit()).append(',').append(row.getSoldDate()).append(',').append(csvText(row.getMemo())).append(',')
-                .append(csvText(String.join(", ", row.getTags()))).append("\r\n");
+                .append(csvText(String.join(", ", row.getTags()))).append(',')
+                .append(csvText(row.isReturned() ? "返品" : "売却")).append(',')
+                .append(row.isReturned() ? row.getReturnCost() : 0).append("\r\n");
         }
         response.getOutputStream().write(csv.toString().getBytes(StandardCharsets.UTF_8));
     }
