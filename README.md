@@ -8,7 +8,7 @@
 
 [Renderでデプロイ設定を開く](https://render.com/deploy?repo=https://github.com/YutaK1014/Web)
 
-上のリンクは管理者向けです。この変更をGitHubへ反映した後に使用してください。公開後の閲覧者は公開URLを開くだけで利用でき、Java・Docker・DBの準備やログインは不要です。
+上のリンクは管理者向けです。公開用コードはGitHubのmainへ反映済みです（2026-10-05確認）。公開後の閲覧者は公開URLを開くだけで利用でき、Java・Docker・DBの準備やログインは不要です。
 
 ## 主な機能
 
