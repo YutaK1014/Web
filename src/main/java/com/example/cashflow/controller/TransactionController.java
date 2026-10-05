@@ -38,6 +38,11 @@ public class TransactionController {
     }
 
     @GetMapping("/transactions/new")
+    public String legacyCreateForm() {
+        return "redirect:/sales/register";
+    }
+
+    @GetMapping("/sales/register")
     public String createForm(Model model) {
         model.addAttribute("form", new TransactionForm());
         return prepareForm(null, model);

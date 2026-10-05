@@ -11,6 +11,6 @@ public class UploadExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public String uploadTooLarge(RedirectAttributes redirect) {
         redirect.addFlashAttribute("uploadError", "写真は5MB以下にしてください。入力内容と写真を選び直してください。");
-        return "redirect:/transactions/new";
+        return "redirect:/sales/register";
     }
 }

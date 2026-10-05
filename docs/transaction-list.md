@@ -14,7 +14,7 @@
 | `/` | サービス紹介、購入履歴の登録・タグと期間検索 |
 | `/dashboard` | 今月の収支、最近の取引、月別利益グラフ、今月のサイト別集計 |
 | `/transactions` | 取引一覧、商品名・サイト・販売月・期間の検索、合計 |
-| `/transactions/new` | 取引登録 |
+| `/sales/register` | 取引登録 |
 | `/transactions/{id}/edit` | 既存値を表示して編集・再計算 |
 | `/transactions/{id}/delete` | 削除確認。確定ボタンで取引・画像を削除 |
 | `/transactions/export` | 一覧と同じ条件でCSV出力 |

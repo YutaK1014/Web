@@ -68,7 +68,7 @@ class DemoApplicationTests {
         var mvc = MockMvcBuilders.webAppContextSetup(context).build();
         assertEquals(3, jdbc.queryForObject("SELECT COUNT(*) FROM transactions", Integer.class));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM purchases", Integer.class));
-        for (String page : new String[]{"/", "/dashboard", "/transactions", "/transactions/new",
+        for (String page : new String[]{"/", "/dashboard", "/transactions", "/sales/register",
                 "/transactions/1/edit", "/transactions/1/delete", "/reports", "/settings", "/purchases/1/tags"}) {
             mvc.perform(get(page)).andExpect(status().isOk())
                 .andExpect(content().string(containsString("公開デモ")));

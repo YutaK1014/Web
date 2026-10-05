@@ -51,7 +51,7 @@ class TransactionRegistrationTests {
     }
 
     @Test void registrationFormOpensWithoutLoginOrToken() throws Exception {
-        var result = mvc.perform(get("/transactions/new")).andExpect(status().isOk())
+        var result = mvc.perform(get("/sales/register")).andExpect(status().isOk())
             .andExpect(content().string(containsString("Yahoo!フリマ")))
             .andExpect(content().string(containsString("販売日"))).andReturn();
         assertFalse(result.getResponse().getContentAsString().contains("name=\"token\""));

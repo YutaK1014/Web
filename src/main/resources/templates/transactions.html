@@ -2,7 +2,7 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head}"></head>
 <body><main class=""><nav th:replace="~{fragments :: nav}"></nav>
-<header><h1>取引一覧</h1><a class="button" th:href="@{/transactions/new}">取引を新規登録</a></header>
+<header><h1>取引一覧</h1><a class="button" th:href="@{/sales/register}">取引を新規登録</a></header>
 <p class="success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
 <form class="filters" method="get" th:action="@{/transactions}" th:object="${filter}">
 <div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>

@@ -40,7 +40,7 @@
 </th:block></td></tr></tbody></table></div>
 <p th:if="${goal != null}">月間利益目標：<strong th:text="${#numbers.formatInteger(goal,1,'COMMA') + '円'}"></strong>
 <span th:text="${summary.profit >= goal ? '達成しました' : 'あと ' + #numbers.formatInteger(goal - summary.profit,1,'COMMA') + '円'}"></span></p>
-<h2>最近の取引</h2><p th:if="${#lists.isEmpty(recent)}">取引はまだありません。<a th:href="@{/transactions/new}">最初の取引を登録する</a></p>
+<h2>最近の取引</h2><p th:if="${#lists.isEmpty(recent)}">取引はまだありません。<a th:href="@{/sales/register}">最初の取引を登録する</a></p>
 <ul class="recent"><li th:each="row : ${recent}"><a th:href="@{/transactions/{id}/edit(id=${row.id})}" th:text="${row.itemName}"></a>
 <span th:text="${row.soldDate}"></span><strong th:text="${#numbers.formatInteger(row.profit,1,'COMMA') + '円'}"></strong></li></ul>
 <h2 th:text="${month.year + '年の月別利益'}"></h2><section th:replace="~{fragments :: chart(${chart})}"></section>
