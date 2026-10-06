@@ -2,12 +2,13 @@
 * { box-sizing: border-box; }
 .return-badge { display: inline-block; padding: 2px 8px; border: 1px solid currentColor; border-radius: 4px; font-size: .85rem; font-weight: bold; white-space: nowrap; }
 body { margin: 0; }
-main { max-width: 1180px; margin: 0 auto; padding: 40px 24px; }
+main { max-width: 1180px; margin: 0 auto; padding: 40px 24px; overflow-wrap: anywhere; }
 .brand { color: #17694e; font-weight: bold; }
 h1 { margin: 20px 0 12px; font-size: 2rem; }
 header { margin-bottom: 32px; }
 header p, .note { line-height: 1.8; }
-.table-container { overflow-x: auto; background: white; border: 1px solid #d3dfd8; border-radius: 12px; }
+.table-container { max-width: 100%; overflow-x: auto; background: white; border: 1px solid #d3dfd8; border-radius: 12px; }
+.table-container:focus-visible { outline: 3px solid #80b7a2; outline-offset: 3px; }
 table { width: 100%; border-collapse: collapse; text-align: left; }
 caption { padding: 16px 20px; text-align: left; color: #50645d; font-size: .9rem; }
 thead { background: #e8f0eb; }
@@ -36,28 +37,28 @@ a { color: #17694e; }
 .field label { display: block; font-weight: bold; margin-bottom: 10px; }
 .required, .optional { font-weight: normal; font-size: .8rem; margin-left: 6px; padding: 3px 6px; border-radius: 4px; background: #edf1ef; }
 .required { color: #912a20; background: #fff0ee; }
-input:not([type="hidden"]), select { width: 100%; padding: 12px; border: 1px solid #8a9e94; border-radius: 6px; font: inherit; background: white; }
+input:not([type="hidden"]), select { width: 100%; min-width: 0; max-width: 100%; padding: 12px; border: 1px solid #8a9e94; border-radius: 6px; font: inherit; background: white; }
 input:focus, select:focus, a:focus-visible, button:focus-visible { outline: 3px solid #80b7a2; outline-offset: 3px; }
 .hint { font-size: .85rem; color: #50645d; line-height: 1.6; }
 .photo-preview { max-width: 100%; max-height: 240px; margin-top: 12px; border-radius: 8px; }
 .field-error { color: #912a20; }
 .profit-preview { padding: 20px; border-radius: 8px; background: #edf5f0; }
-.profit-preview output { display: block; margin-top: 8px; font-size: 2rem; font-weight: bold; }
+.profit-preview output { display: block; margin-top: 8px; font-size: 2rem; font-weight: bold; overflow-wrap: anywhere; }
 .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 28px; }
 [hidden] { display: none !important; }
-@media (max-width: 600px) { main { padding: 24px 16px; } th, td { padding: 12px; } h1 { font-size: 1.6rem; } }
 .navigation { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid #d3dfd8; margin-bottom: 24px; }
 .navigation .brand { margin-right: auto; }
 button { font: inherit; padding: 8px 12px; cursor: pointer; border-radius: 6px; }
-.summary-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 16px; margin: 24px 0; }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,150px),1fr)); gap: 16px; margin: 24px 0; }
+.summary-grid > *, .filter-grid > *, .chart-row > * { min-width: 0; }
 .summary-grid > div { padding: 20px; background: #fff; border: 1px solid #d3dfd8; border-radius: 10px; }
 .summary-grid strong { display: block; margin-top: 10px; font-size: 1.25rem; overflow-wrap: anywhere; }
 .summary-grid h2 { font-size: 1.15rem; }
 .filters { padding: 20px; border: 1px solid #d3dfd8; border-radius: 10px; margin-bottom: 24px; }
-.filter-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 16px; }
+.filter-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,160px),1fr)); gap: 16px; }
 .filters input, .filters select { margin: 8px 0; }
 .filters > input { max-width: 160px; margin-right: 16px; }
-textarea { width: 100%; padding: 12px; font: inherit; border: 1px solid #8a9e94; border-radius: 6px; }
+textarea { width: 100%; max-width: 100%; resize: vertical; padding: 12px; font: inherit; border: 1px solid #8a9e94; border-radius: 6px; }
 input[type="checkbox"] { width: auto; }
 .chart { padding: 20px; background: #fff; border: 1px solid #d3dfd8; border-radius: 10px; }
 .chart-row { display: grid; grid-template-columns: 80px minmax(30px,1fr) minmax(100px,auto); gap: 12px; align-items: center; margin: 12px 0; }
@@ -83,7 +84,7 @@ input[type="checkbox"] { width: auto; }
 .dark .success { background: #254d36; }
 .dark .optional { color: #243c37; }
 .demo-notice { flex-basis: 100%; margin: 0; padding: 0.75rem; border: 1px solid currentColor; border-radius: 0.5rem; font-size: 0.875rem; }
-.month-navigation { display: flex; gap: 24px; margin-top: 16px; }
+.month-navigation { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 16px; }
 .sales-calendar { table-layout: fixed; min-width: 700px; }
 .sales-calendar th { text-align: center; }
 .sales-calendar td { height: 115px; padding: 10px; vertical-align: top; border-right: 1px solid #d3dfd8; }
@@ -92,3 +93,45 @@ input[type="checkbox"] { width: auto; }
 .sales-calendar strong { margin-top: 6px; overflow-wrap: anywhere; }
 .sales-calendar .has-sales { background: #edf5f0; }
 .dark .sales-calendar .has-sales { background: #304d3c; }
+
+/* Tablet: keep navigation and form fields readable in portrait orientation. */
+@media (max-width: 1024px) {
+  main { padding: 32px 24px; }
+  .navigation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+  .navigation .brand, .navigation .demo-notice { grid-column: 1 / -1; }
+  .navigation > a, .navigation > button { display: flex; align-items: center; min-height: 44px; padding: 10px 12px; }
+  .navigation > * { min-width: 0; }
+  .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .button, button { min-height: 44px; }
+  .form-actions > a, .month-navigation > a, td.nowrap > a { display: inline-flex; align-items: center; min-height: 44px; }
+  td.nowrap > a { padding: 8px; }
+}
+
+/* Phone: stack controls and place chart values above their bars. */
+@media (max-width: 600px) {
+  main { padding: 20px 16px; }
+  h1 { font-size: 1.6rem; }
+  h2 { font-size: 1.25rem; }
+  header { margin-bottom: 24px; }
+  .hero { padding: 12px 0; }
+  .navigation { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .navigation > a, .navigation > button { padding: 10px 8px; font-size: .9rem; }
+  .navigation .brand { font-size: 1.1rem; }
+  .transaction-form, .filters, .chart { padding: 16px; }
+  .filter-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .filters > label { display: block; }
+  .filters > input { display: block; max-width: 100%; margin-right: 0; }
+  .filters > button, .transaction-form > button { width: 100%; margin-top: 8px; }
+  .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .summary-grid > div { padding: 12px; }
+  .summary-grid strong { font-size: 1.1rem; }
+  .form-actions { flex-direction: column; align-items: stretch; gap: 12px; margin-top: 20px; }
+  .form-actions > a, .form-actions > button { justify-content: center; text-align: center; }
+  .chart-row { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 6px 12px; margin: 16px 0; }
+  .chart-row > strong { grid-column: 2; grid-row: 1; }
+  .chart-row > .bar-track { grid-column: 1 / -1; grid-row: 2; }
+  .recent li { gap: 8px 16px; }
+  .recent a { flex-basis: 100%; }
+  th, td { padding: 12px; }
+  .table-container::before { content: "表は左右にスクロールできます"; display: block; position: sticky; left: 0; padding: 12px; font-size: .85rem; }
+}
