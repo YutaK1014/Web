@@ -3,6 +3,7 @@
 <head th:replace="~{fragments :: head}"></head>
 <body><main class="form-page"><nav th:replace="~{fragments :: nav}"></nav>
 <h1>設定</h1><p class="success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
+<section><h2>送料・梱包テンプレート</h2><p>よく使う配送方法・送料・梱包費を保存して、取引登録時に選べます。</p><p><a th:href="@{/settings/shipping-templates}">テンプレートを管理する</a></p></section>
 <form class="transaction-form" method="post" th:action="@{/settings}" th:object="${settings}">
 <div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
 <h2>販売手数料</h2><p>ご利用のサイト・契約条件に合わせて設定してください。登録・編集時に、この設定から手数料を自動計算します。</p>

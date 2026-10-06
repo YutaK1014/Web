@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head}"></head>
+<body><main class="form-page"><nav th:replace="~{fragments :: nav}"></nav>
+<h1>送料・梱包テンプレート</h1>
+<p>よく使う配送方法と梱包費を保存して、取引登録・編集時に選べます。</p>
+<p class="success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
+<form class="transaction-form" method="post" th:object="${templateForm}"
+      th:action="${templateId == null} ? @{/settings/shipping-templates} : @{/settings/shipping-templates/{id}/edit(id=${templateId})}">
+<h2 th:text="${templateId == null ? 'テンプレートを追加' : 'テンプレートを編集'}"></h2>
+<div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
+<div class="field"><label for="name">テンプレート名（必須）</label><input th:field="*{name}" maxlength="100" required placeholder="例：小物用・封筒"></div>
+<div class="field"><label for="shippingMethod">配送方法（必須）</label><input th:field="*{shippingMethod}" maxlength="100" required placeholder="例：ゆうパケット"></div>
+<div class="field"><label for="packaging">梱包内容（任意）</label><input th:field="*{packaging}" maxlength="100" placeholder="例：封筒＋緩衝材"></div>
+<div class="field"><label for="shippingCost">送料（円・必須）</label><input type="number" th:field="*{shippingCost}" min="0" max="1000000000" step="1" required></div>
+<div class="field"><label for="packagingCost">梱包費（円・必須）</label><input type="number" th:field="*{packagingCost}" min="0" max="1000000000" step="1" required></div>
+<p class="hint">取引には送料と梱包費の合計を反映します。合計は1,000,000,000円以内で入力してください。料金はご利用の条件に合わせて設定してください。</p>
+<div class="form-actions"><button type="submit" class="button">テンプレートを保存</button><a th:if="${templateId != null}" th:href="@{/settings/shipping-templates}">編集をやめる</a></div>
+</form>
+<section><h2>保存したテンプレート</h2>
+<p th:if="${#lists.isEmpty(shippingTemplates)}">テンプレートはまだありません。上のフォームから追加してください。</p>
+<article class="transaction-form" th:each="template : ${shippingTemplates}">
+<h3 th:text="${template.name}"></h3><p>配送方法：<span th:text="${template.shippingMethod}"></span></p>
+<p th:if="${!#strings.isEmpty(template.packaging)}">梱包内容：<span th:text="${template.packaging}"></span></p>
+<p>送料 <span th:text="${template.shippingCost}"></span>円 ＋ 梱包費 <span th:text="${template.packagingCost}"></span>円 ＝ 合計 <strong th:text="${template.totalCost + '円'}"></strong></p>
+<div class="form-actions"><a th:href="@{/settings/shipping-templates/{id}/edit(id=${template.id})}">編集</a><a th:href="@{/settings/shipping-templates/{id}/delete(id=${template.id})}">削除</a></div>
+</article></section>
+<p class="hint">テンプレートの編集・削除では、登録済み取引の金額は変わりません。</p>
+<div class="form-actions"><a th:href="@{/sales/register}">取引を登録する</a><a th:href="@{/settings}">設定に戻る</a></div>
+</main></body></html>

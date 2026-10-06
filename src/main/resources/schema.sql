@@ -1,6 +1,15 @@
 -- 個人利用MySQLと公開デモH2の共通スキーマ。既存データは変更しません。
 
 
+CREATE TABLE IF NOT EXISTS shipping_templates (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    shipping_method VARCHAR(100) NOT NULL,
+    packaging VARCHAR(100) NOT NULL DEFAULT '',
+    shipping_cost INT NOT NULL,
+    packaging_cost INT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL,

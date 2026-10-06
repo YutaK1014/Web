@@ -16,6 +16,11 @@ demo-data.sqlはdemoプロファイルだけが読む。日付は起動日とそ
 
 DBの初期化と画像ファイルの寿命は別である。アプリ起動時に画像を一括削除しないため、同じDockerコンテナを再起動するとDBだけが初期化され、未参照の画像が残る場合がある。画像ボリュームのない現行Composeではコンテナの削除・再作成で画像も破棄される。
 
+## shipping_templates（送料・梱包テンプレート）
+
+`id BIGINT AUTO_INCREMENT PRIMARY KEY`、`name VARCHAR(100)`、`shipping_method VARCHAR(100)`、`packaging VARCHAR(100) DEFAULT ''`、`shipping_cost INT`、`packaging_cost INT`。すべてNOT NULL。
+送料・梱包費および合計をアプリ側で0〜1,000,000,000円に制限する。取引との外部キーはなく、選択時の合計を既存のtransactions.shipping_costにコピーする。schema.sqlで不足テーブルを作成するため、既存取引テーブルの移行は不要。
+
 ## users（既存DB互換用・アプリでは未使用）
 
 既存データを維持するためテーブルは残す。ユーザー登録・認証・情報編集には使用しない。

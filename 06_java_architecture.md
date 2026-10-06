@@ -1,5 +1,7 @@
 # Java / Spring Boot設計
 
+2026-10-06追加：`ShippingTemplateController`は管理画面とCRUDのルーティング、`ShippingTemplateForm`は文字数・金額・合計の検証、`ShippingTemplateService`は保存・取得・削除と存在チェック、`ShippingTemplateRepository`はMyBatisによる`shipping_templates`操作を担当する。`ShippingTemplate`が保存項目と合計金額を表す。`TransactionController`がフォーム用の一覧を取得し、`transaction-form.js`が選択時の費用コピーを行う。
+
 2026-10-05更新。現在のパッケージ・クラス構成と公開用demoの起動方式を示す。ローカル検証は完了し、Renderへの実デプロイ・公開URL発行は未完了。
 
 ## 構成

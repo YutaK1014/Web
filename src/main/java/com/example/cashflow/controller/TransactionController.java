@@ -22,10 +22,13 @@ import org.slf4j.LoggerFactory;
 public class TransactionController {
     private final TransactionService service;
     private final MarketplaceService marketplaces;
+    private final com.example.cashflow.service.ShippingTemplateService shippingTemplates;
 
-    public TransactionController(TransactionService service, MarketplaceService marketplaces) {
+    public TransactionController(TransactionService service, MarketplaceService marketplaces,
+                                 com.example.cashflow.service.ShippingTemplateService shippingTemplates) {
         this.service = service;
         this.marketplaces = marketplaces;
+        this.shippingTemplates = shippingTemplates;
     }
 
     @GetMapping("/transactions")
@@ -62,6 +65,7 @@ public class TransactionController {
         model.addAttribute("platforms", TransactionForm.PLATFORMS);
         model.addAttribute("rates", marketplaces.rates());
         model.addAttribute("rounding", marketplaces.rounding());
+        model.addAttribute("shippingTemplates", shippingTemplates.all());
         return "transaction-form";
     }
 

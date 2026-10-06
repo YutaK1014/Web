@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head}"></head>
+<body><main class="form-page"><nav th:replace="~{fragments :: nav}"></nav>
+<h1>テンプレートの削除確認</h1>
+<p>「<strong th:text="${template.name}"></strong>」を削除しますか？</p>
+<p>登録済み取引の金額は変わりません。</p>
+<form method="post" th:action="@{/settings/shipping-templates/{id}/delete(id=${template.id})}">
+<div class="form-actions"><button class="button" type="submit">削除する</button><a th:href="@{/settings/shipping-templates}">キャンセル</a></div>
+</form></main></body></html>

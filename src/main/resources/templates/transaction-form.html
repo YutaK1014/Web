@@ -22,7 +22,17 @@ th:object="${form}" enctype="multipart/form-data" th:attr="data-rounding=${round
 <div class="field" id="custom-platform-field"><label for="customMarketplace">その他のサイト名 <span class="required">その他を選択した場合は必須</span></label><input type="text" th:field="*{customMarketplace}" maxlength="100"></div>
 <div class="field"><label for="feeRate">販売手数料率（%）</label><input type="number" th:field="*{feeRate}" min="0" max="100" step="0.01"><p id="rate-help" class="hint">「その他」は0〜100%で入力してください。</p></div>
 <div class="field"><label for="sellingPrice">販売価格（円） <span class="required">必須</span></label><input type="number" th:field="*{sellingPrice}" min="0" max="1000000000" step="1" required></div>
-<div class="field"><label for="shippingCost">送料（円） <span class="required">必須</span></label><input type="number" th:field="*{shippingCost}" min="0" max="1000000000" step="1" required></div>
+<div class="field"><label for="shipping-template">送料・梱包テンプレート <span class="optional">任意</span></label>
+<select id="shipping-template" aria-describedby="shipping-template-help"><option value="">選択してください</option>
+<option th:each="template : ${shippingTemplates}" th:value="${template.id}"
+        th:attr="data-total=${template.totalCost},data-method=${template.shippingMethod},data-packaging=${template.packaging},data-shipping=${template.shippingCost},data-packaging-cost=${template.packagingCost}"
+        th:text="${template.name + ' ／ ' + template.shippingMethod + ' ／ 合計 ' + template.totalCost + '円'}"></option></select>
+<p class="hint" id="shipping-template-help">選ぶと送料と梱包費の合計を下の送料欄へ入力します。反映後の金額は変更できます。</p>
+<p id="shipping-template-detail" class="hint" role="status"></p>
+<p class="hint" th:if="${#lists.isEmpty(shippingTemplates)}">保存したテンプレートはありません。</p>
+<a th:href="@{/settings/shipping-templates}" target="_blank" rel="noopener">テンプレートを管理する（別タブ）</a><p class="hint">追加・変更したテンプレートは、登録画面を開き直すと表示されます。</p>
+<noscript><p>テンプレートの自動反映にはJavaScriptが必要です。合計費用を送料欄へ入力してください。</p></noscript></div>
+<div class="field"><label for="shippingCost">送料（梱包費込み・円） <span class="required">必須</span></label><input type="number" th:field="*{shippingCost}" min="0" max="1000000000" step="1" required></div>
 <div class="field"><label for="purchasePrice">仕入価格（円） <span class="optional">任意</span></label><input type="number" th:field="*{purchasePrice}" min="0" max="1000000000" step="1" placeholder="未入力なら0円"></div>
 <div class="field"><label for="soldDate">販売日 <span class="required">必須</span></label><input type="date" th:field="*{soldDate}" min="1000-01-01" max="9999-12-31" required></div>
 <div class="field"><label for="tags">タグ <span class="optional">任意</span></label>

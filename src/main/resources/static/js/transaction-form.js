@@ -46,6 +46,18 @@
             : rate.value === '' ? 'このサイトの手数料率を設定画面で設定してください。' : '設定画面の手数料率を使用します。';
         updateProfit();
     }
+    const shippingTemplate = document.getElementById('shipping-template');
+    const templateDetail = document.getElementById('shipping-template-detail');
+    shippingTemplate.addEventListener('change', () => {
+        const option = shippingTemplate.selectedOptions[0];
+        if (!option?.value) { templateDetail.textContent = ''; return; }
+        shipping.value = option.dataset.total;
+        templateDetail.textContent = option.dataset.method +
+            (option.dataset.packaging ? ' ／ ' + option.dataset.packaging : '') +
+            '（送料 ' + option.dataset.shipping + '円 ＋ 梱包費 ' + option.dataset.packagingCost + '円）を反映しました。';
+        updateProfit();
+    });
+    shipping.addEventListener('input', () => { shippingTemplate.value = ''; templateDetail.textContent = ''; });
     [price, shipping, purchase].forEach(input => input.addEventListener('input', updateProfit));
     rate.addEventListener('input', () => { if (platform.value === 'その他') otherRate = rate.value; updateProfit(); });
     platform.addEventListener('change', updatePlatform);
