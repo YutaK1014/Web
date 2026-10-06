@@ -1,5 +1,7 @@
 # データベース設計書
 
+2026-10-06更新。正本の`src/main/resources/schema.sql`とRepositoryの保存・取得処理に対応する。
+
 個人利用はMySQL 8.0、公開デモはH2のMySQL互換モードを使用する。同一のschema.sqlとMyBatis Mapperを使う。ログイン・ユーザー情報管理は行わず、公開デモのデータは全閲覧者で共有する。
 
 ## 実行環境と初期化
@@ -18,8 +20,17 @@ DBの初期化と画像ファイルの寿命は別である。アプリ起動時
 
 ## shipping_templates（送料・梱包テンプレート）
 
-`id BIGINT AUTO_INCREMENT PRIMARY KEY`、`name VARCHAR(100)`、`shipping_method VARCHAR(100)`、`packaging VARCHAR(100) DEFAULT ''`、`shipping_cost INT`、`packaging_cost INT`。すべてNOT NULL。
+| カラム | 型 | NULL | 制約・初期値 | 説明 |
+| --- | --- | --- | --- | --- |
+| id | BIGINT | NO | PK, AUTO_INCREMENT | テンプレートID |
+| name | VARCHAR(100) | NO | | 名前 |
+| shipping_method | VARCHAR(100) | NO | | 配送方法 |
+| packaging | VARCHAR(100) | NO | DEFAULT '' | 梱包内容 |
+| shipping_cost | INT | NO | | 送料 |
+| packaging_cost | INT | NO | | 梱包費 |
+
 送料・梱包費および合計をアプリ側で0〜1,000,000,000円に制限する。取引との外部キーはなく、選択時の合計を既存のtransactions.shipping_costにコピーする。schema.sqlで不足テーブルを作成するため、既存取引テーブルの移行は不要。
+名前の一意制約・作成日時・更新日時は設けない。一覧はID昇順。demoの初期データにテンプレートはなく、登録分は全閲覧者で共有し、DB再起動時に初期化する。
 
 ## users（既存DB互換用・アプリでは未使用）
 
@@ -57,7 +68,12 @@ DBの初期化と画像ファイルの寿命は別である。アプリ起動時
 
 ## transaction_returns（返品）
 
-transactionsと0または1対1。transaction_id（BIGINT、主キー・外部キー）とreturn_cost（INT、NOT NULL）を保存する。取引削除時はON DELETE CASCADEで削除する。
+| カラム | 型 | NULL | 制約 | 説明 |
+| --- | --- | --- | --- | --- |
+| transaction_id | BIGINT | NO | PK, FK → transactions.id, ON DELETE CASCADE | 対象取引ID |
+| return_cost | INT | NO | | 返品費用合計（0〜1,000,000,000円） |
+
+transactionsの1件に対して0または1件。取引削除時はON DELETE CASCADEで削除する。返品日や返品取消状態の列は設けない。
 レコードの存在が返品を表すため、費用0円も返品として識別できる。不足テーブルを起動時に作成し、既存transactionsのスキーマ・データ変更は不要。
 返品登録・費用更新は取引行をロックして同一トランザクションでUPSERTする。元のtransactions.profitを含む販売情報は保持するが、表示・集計は返品費用のマイナスを使用する。
 
@@ -109,6 +125,8 @@ transactionsと0または1対1。transaction_id（BIGINT、主キー・外部キ
 TagFormはnull・空文字・空白のみを文字数検証前に空のタグ一覧へ変換する。空白のみの1,000文字超もタグなしとして扱い、その他の入力だけ分割前に1,000文字上限を検証する。画面はmaxlength=1000で入力を制限する。
 
 ### 共通ルール
+- ダッシュボードの前月比較・カレンダーは既存取引から都度算出し、専用テーブルを設けない。返品は元のsold_dateで集計する。
+- 値下げシミュレーションは既存の料率・端数処理を参照するだけで、入力・結果・その他経費・希望利益をDBに保存しない。
 - 金額は原則0円以上
 - purchase_priceがNULLの場合、計算時は0円扱い
 - marketplaceが「その他」の場合、custom_marketplaceを必須とする

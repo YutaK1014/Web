@@ -1,8 +1,10 @@
 # Java / Spring Boot設計
 
+2026-10-06更新。返品・送料／梱包テンプレート・値下げ試算・前月比較／カレンダー・画面サイズ対応を含む構成を示す。
+
 2026-10-06追加：`ShippingTemplateController`は管理画面とCRUDのルーティング、`ShippingTemplateForm`は文字数・金額・合計の検証、`ShippingTemplateService`は保存・取得・削除と存在チェック、`ShippingTemplateRepository`はMyBatisによる`shipping_templates`操作を担当する。`ShippingTemplate`が保存項目と合計金額を表す。`TransactionController`がフォーム用の一覧を取得し、`transaction-form.js`が選択時の費用コピーを行う。
 
-2026-10-05更新。現在のパッケージ・クラス構成と公開用demoの起動方式を示す。ローカル検証は完了し、Renderへの実デプロイ・公開URL発行は未完了。
+現在のパッケージ・クラス構成と公開用demoの起動方式を示す。リポジトリに記録された公開状況はローカル検証までで、Renderへの実デプロイ・公開URL発行は未完了。
 
 ## 構成
 
@@ -14,6 +16,8 @@ src/main/java/com/example/cashflow/
 ├─ controller/
 │  ├─ PageController.java
 │  ├─ TransactionController.java
+│  ├─ ShippingTemplateController.java
+│  ├─ DiscountController.java
 │  ├─ HealthController.java
 │  ├─ ApplicationExceptionHandler.java
 │  └─ UploadExceptionHandler.java
@@ -22,18 +26,25 @@ src/main/java/com/example/cashflow/
 │  ├─ MarketplaceService.java
 │  ├─ ReportService.java
 │  ├─ PurchaseService.java
+│  ├─ ShippingTemplateService.java
+│  ├─ DiscountService.java
 │  └─ PhotoStorage.java
 ├─ repository/
 │  ├─ TransactionRepository.java
 │  ├─ PurchaseRepository.java
 │  ├─ TagRepository.java
+│  ├─ ShippingTemplateRepository.java
 │  └─ MarketplaceSettingRepository.java
 ├─ entity/
 │  ├─ Transaction.java
 │  ├─ Purchase.java
+│  ├─ ShippingTemplate.java
 │  └─ MarketplaceSetting.java
 ├─ dto/
 │  ├─ TransactionForm.java
+│  ├─ ReturnForm.java
+│  ├─ ShippingTemplateForm.java
+│  ├─ DiscountForm.java
 │  ├─ TransactionFilter.java
 │  ├─ PurchaseForm.java
 │  ├─ PurchaseFilter.java
@@ -61,7 +72,9 @@ src/main/resources/
 | クラス | 担当 |
 | --- | --- |
 | PageController | トップ・ダッシュボード・レポート・設定の表示、設定保存、購入登録・検索・購入タグ編集 |
-| TransactionController | 取引一覧・登録・編集・削除確認・削除、CSV出力 |
+| TransactionController | 取引一覧・登録・編集・返品登録／費用更新・削除確認・削除、CSV出力。旧登録URLからのリダイレクト、フォームへの送料テンプレート供給 |
+| ShippingTemplateController | 送料・梱包テンプレートの一覧・登録・編集・削除確認・削除 |
+| DiscountController | 値下げシミュレーションの入力・計算結果・入力エラー表示 |
 | HealthController | GET /healthz。DB疎通成功時200 / UP、失敗時503 / DOWNのJSON応答 |
 | ApplicationExceptionHandler | DB障害・URLパラメーターの型不正に対するエラー表示 |
 | UploadExceptionHandler | アップロード容量超過時の案内と登録画面へのリダイレクト |
@@ -70,14 +83,17 @@ src/main/resources/
 
 | クラス | 主なメソッド・責務 |
 | --- | --- |
-| TransactionService | search・get・save・delete。入力検証、保存・更新の共通処理、DBと画像の整合性管理 |
+| TransactionService | search・get・save・saveReturn・delete。入力検証、通常編集と返品登録の排他制御、DBと画像の整合性管理 |
 | MarketplaceService | rates・rate・rounding・calculateFee・settings・save・monthlyGoal。料率・端数処理・利益目標の管理 |
-| ReportService | all・summarize・monthly・yearly・byMarketplace・chart。集計とグラフ表示用データの生成 |
+| ReportService | all・summarize・monthly・yearly・byMarketplace・chart・monthSummary・compare・calendar。返品を考慮した集計、前月比較・カレンダー・グラフの生成 |
+| ShippingTemplateService | all・get・save・delete。テンプレート取得・保存・削除、未登録IDの404処理 |
+| DiscountService | calculate。候補価格ごとの手数料再計算と最低価格の二分探索。Resultに表示結果を保持し、DBには保存しない |
 | PhotoStorage | save・delete。画像内容検証、PNG変換、ファイル保存・削除 |
 | PurchaseService | all・search・get・save・updateTags。購入入力検証、期間・タグ検索、タグの保存 |
 | Purchase | 購入商品名・購入日・金額・購入先・メモ・タグ |
 | Transaction | 取引情報。getProfitで利益を計算、getPlatformNameで表示サイト名、getPhotoUrlで有効な画像パスを取得 |
 | MarketplaceSetting | サイト別料率の情報 |
+| ShippingTemplate | テンプレート名・配送方法・梱包内容・送料・梱包費、getTotalCostによる合計 |
 
 手数料はMarketplaceService.calculateFee、利益はTransaction.getProfitで計算する。
 TransactionService.saveは新規登録と編集を共通化し、IDの有無で処理を切り替える。
@@ -91,13 +107,16 @@ PurchaseHistoryTestsで登録・表示順・入力検証・HTMLエスケープ�
 
 MyBatisのMapperとSQLアノテーションでDBを操作する。
 
-- TransactionRepository：search・findById・countImageReferences・insert・update・delete。
+- TransactionRepository：search・findById・countImageReferences・insert・update・delete・lockById・saveReturn。transaction_returnsをLEFT JOINして取得し、返品費用をUPSERTする。
+- ShippingTemplateRepository：findAll・findById・insert・update・delete。一覧はID昇順、更新・削除は影響行数で存在を確認する。
 - MarketplaceSettingRepository：findAll・findByMarketplaceName・insert・update、getOption・insertOption・updateOption。
 - ユーザー情報用のEntity・Repository・Service・Controllerは設けない。
 - usersテーブルとuser_id列はDB互換用で、アプリのユーザー管理には使用しない。
 
 ## DTO・設定
 
+- ShippingTemplateForm：文字列の前後空白除去・文字数・各費用・合計上限を検証。from・toEntityでフォームとEntityを変換する。
+- DiscountForm：現在価格・送料・仕入価格・その他経費・希望利益、対応サイト、「その他」の料率を検証する。
 - ReturnForm：返品費用の必須・整数・範囲検証。TransactionControllerのGET/POST `/transactions/{id}/return`とTransactionService.saveReturnで扱う。
 - TransactionRepository：transaction_returnsをLEFT JOINして返品費用を取得し、lockById・saveReturnで既存取引をロックして費用をUPSERTする。
 - Transaction：returnCostがNULL以外なら返品。getRecordedSales/Fees/Shipping/Purchasesは返品時0、getProfitは返品費用のマイナスを返す。元の金額のgetterは保持する。
@@ -139,7 +158,16 @@ MyBatisのMapperとSQLアノテーションでDBを操作する。
 - DBのトランザクション完了に合わせて置換・削除・ロールバック時の画像を処理する。
 - アプリ起動時の画像一括削除・未参照画像の定期削除は実装しない。同じDockerコンテナの再起動ではH2のデータだけが初期化され、画像ファイルは残る。
 
+## 共通画面・JavaScript・CSS
+
+- fragments.htmlの共通viewport・ナビゲーション・集計部品を各画面で利用する。登録リンクは`/sales/register`、値下げ試算リンクは`/discount-simulator`。
+- transaction-form.jsは手数料・利益のプレビュー、写真プレビュー、送料テンプレート選択時の費用コピーを担当する。保存時の金額はJavaで再検証・再計算する。
+- transactions.cssは1024px以下でメニュー3列・検索欄2列、600px以下でメニュー2列・入力欄1列へ切り替える。狭い画面のグラフは数値の下へ棒を配置し、表・カレンダーはコンテナ内で横スクロールする。
+- theme.jsはブラウザーにテーマを保存し、ダークモードにも共通のレスポンシブレイアウトを使用する。値下げ試算はJavaScriptに依存せずPOSTで計算する。
+
 ## テスト
+
+ShippingTemplateTestsで管理CRUD、入力値保持、0円・上限・合計上限、HTMLエスケープ、過去の取引金額に影響しないことを確認する。DiscountSimulationTestsで試算の境界値・丸め・最低価格の最小性・入力不正・設定不足・非保存を確認する。TransactionReturnTestsで返品登録・更新・元データ保持・集計・CSV・削除連動を確認する。
 
 DashboardReportTestsで前月比較の年またぎ・平均の丸め・0件・うるう日・4〜6週のカレンダー・日別合算・大きな利益を確認する。DemoApplicationTestsでは月指定のダッシュボード描画・日別検索リンク・年月の境界と不正入力も検証する。
 
