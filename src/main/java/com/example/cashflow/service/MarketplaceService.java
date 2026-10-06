@@ -32,7 +32,10 @@ public class MarketplaceService {
     public String rounding() { return repository.getOption("fee_rounding"); }
 
     public int calculateFee(int price, BigDecimal rate) {
-        String mode = rounding();
+        return calculateFee(price, rate, rounding());
+    }
+
+    public int calculateFee(int price, BigDecimal rate, String mode) {
         if (mode == null || !List.of("DOWN", "HALF_UP", "UP").contains(mode))
             throw new IllegalArgumentException("設定画面で手数料の端数処理を選択してください。");
         return BigDecimal.valueOf(price).multiply(rate).movePointLeft(2).setScale(0, RoundingMode.valueOf(mode)).intValueExact();

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head}"></head>
+<body><main class="form-page"><nav th:replace="~{fragments :: nav}"></nav>
+<h1>値下げシミュレーション</h1>
+<p>あと何円値下げできるか、費用と確保したい利益から計算できます。</p>
+<form class="transaction-form" method="post" th:action="@{/discount-simulator}" th:object="${discountForm}">
+<div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
+<div class="field"><label for="sellingPrice">現在の販売価格（円）</label><input type="number" th:field="*{sellingPrice}" min="0" max="1000000000" step="1" required></div>
+<div class="field"><label for="marketplace">フリマサイト</label><select th:field="*{marketplace}" required><option value="">選択してください</option><option th:each="platform : ${platforms}" th:value="${platform}" th:text="${platform == 'その他' ? 'その他（手数料率を入力）' : platform + '（' + (rates.get(platform) == null ? '未設定' : rates.get(platform) + '%') + '）'}"></option></select></div>
+<div class="field"><label for="feeRate">「その他」の手数料率（%）</label><input type="number" th:field="*{feeRate}" min="0" max="100" step="0.01"><p class="hint">その他を選んだ場合のみ使用します。サイト別の料率と端数処理は<a th:href="@{/settings}">設定</a>で変更できます。</p></div>
+<div class="field"><label for="shippingCost">送料（円）</label><input type="number" th:field="*{shippingCost}" min="0" max="1000000000" step="1" required></div>
+<div class="field"><label for="purchasePrice">仕入価格（円）</label><input type="number" th:field="*{purchasePrice}" min="0" max="1000000000" step="1" required></div>
+<div class="field"><label for="otherCost">その他経費（円）</label><input type="number" th:field="*{otherCost}" min="0" max="1000000000" step="1" required><p class="hint">梱包費など、送料・仕入価格に含めていない費用の合計を入力してください。</p></div>
+<div class="field"><label for="desiredProfit">確保したい利益（円）</label><input type="number" th:field="*{desiredProfit}" min="0" max="1000000000" step="1" required><p class="hint">赤字にならない価格を調べる場合は0円にしてください。</p></div>
+<button type="submit" class="button">値下げ可能額を計算</button>
+<p class="hint">シミュレーションの入力・結果は保存されず、取引や収支集計には反映されません。金額を変更したら再計算してください。</p>
+</form>
+<section th:if="${result != null}" aria-label="シミュレーション結果" aria-live="polite">
+<h2>計算結果</h2>
+<p>確保したい利益：<strong th:text="${#numbers.formatInteger(result.desiredProfit,1,'COMMA') + '円'}"></strong></p>
+<p>手数料率 <span th:text="${result.rate + '%'}"></span> ／ 端数処理：<span th:text="${result.rounding == 'DOWN' ? '切り捨て' : (result.rounding == 'UP' ? '切り上げ' : '四捨五入')}"></span></p>
+<div class="summary-grid">
+<div><span>あと値下げできる金額</span><strong th:text="${#numbers.formatInteger(result.discount,1,'COMMA') + '円'}"></strong></div>
+<div><span>現在価格での利益</span><strong th:classappend="${result.currentProfit < 0} ? 'negative'" th:text="${#numbers.formatInteger(result.currentProfit,1,'COMMA') + '円'}"></strong></div>
+<div><span>現在価格での手数料</span><strong th:text="${#numbers.formatInteger(result.currentFee,1,'COMMA') + '円'}"></strong></div>
+</div>
+<p class="negative" th:if="${result.currentProfit < 0}">現在の販売価格では赤字です。</p>
+<p th:if="${result.shortfall > 0}">値下げできません。確保したい利益まで、利益があと <strong th:text="${#numbers.formatInteger(result.shortfall,1,'COMMA') + '円'}"></strong>不足しています。</p>
+<div th:if="${result.minimumPrice != null}">
+<p>希望利益を確保できる最低販売価格：<strong th:text="${#numbers.formatInteger(result.minimumPrice,1,'COMMA') + '円'}"></strong></p>
+<p>最低価格での手数料：<span th:text="${#numbers.formatInteger(result.minimumFee,1,'COMMA') + '円'}"></span> ／ 利益：<span th:text="${#numbers.formatInteger(result.minimumProfit,1,'COMMA') + '円'}"></span></p>
+</div>
+<p th:if="${result.minimumPrice == null}">計算範囲（0〜1,000,000,000円）では希望利益を確保できる販売価格がありません。</p>
+<p class="hint">利益＝販売価格−販売手数料−送料−仕入価格−その他経費。値下げ後の手数料も再計算しています。各サイトの最低出品価格などの制限は別途確認してください。</p>
+</section>
+</main></body></html>

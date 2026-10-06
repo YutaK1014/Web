@@ -6,6 +6,8 @@
 
 ## 構成
 
+値下げシミュレーション：`DiscountController`がGET/POST `/discount-simulator`を担当し、`DiscountForm`が金額・サイト・料率を検証する。`DiscountService`が共通手数料計算と最低価格探索を実行し、`discount-simulator.html`に結果を渡す。`DiscountSimulationTests`で端数処理ごとの最小性・赤字・0/100%・大きな費用・入力検証・設定不足・HTML表示・取引への非保存を確認する。DBスキーマの変更はない。
+
 ```text
 src/main/java/com/example/cashflow/
 ├─ CashflowApplication.java
