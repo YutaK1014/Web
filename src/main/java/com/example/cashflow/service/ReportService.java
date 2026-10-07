@@ -17,6 +17,15 @@ public class ReportService {
     public record Bar(String label, long profit, double width) {}
     public record Comparison(String label, String unit, long current, long previous) {
         public long difference() { return current - previous; }
+        public String trend() {
+            return current > previous ? "増加" : current < previous ? "減少" : "変化なし";
+        }
+        public BigDecimal percentageChange() {
+            if (previous <= 0) return null;
+            return BigDecimal.valueOf(current).subtract(BigDecimal.valueOf(previous))
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(previous), 1, RoundingMode.HALF_UP);
+        }
     }
     public record CalendarDay(LocalDate date, long profit, long count, long returnCount) {}
 

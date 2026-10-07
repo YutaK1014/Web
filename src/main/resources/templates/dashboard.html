@@ -17,13 +17,19 @@
 <p class="hint">選択月と前月の各月全体に登録された取引を比較します。今月は登録済み分の集計です。平均利益は利益÷販売件数を1円単位に四捨五入し、販売0件の月は0円として表示します。</p>
 <div class="table-container" tabindex="0">
 <table class="comparison-table"><caption th:text="${month + ' と ' + previousMonth + ' の比較（差は選択月 − 前月）'}"></caption>
-<thead><tr><th scope="col">項目</th><th scope="col">選択月</th><th scope="col">前月</th><th scope="col">前月との差</th></tr></thead>
+<thead><tr><th scope="col">項目</th><th scope="col">選択月</th><th scope="col">前月</th><th scope="col">前月との差</th><th scope="col">増減率</th></tr></thead>
 <tbody><tr th:each="item : ${comparisons}">
 <th scope="row" th:text="${item.label}"></th>
 <td class="amount" th:classappend="${item.current < 0} ? 'negative'" th:text="${#numbers.formatInteger(item.current,1,'COMMA') + item.unit}"></td>
 <td class="amount" th:classappend="${item.previous < 0} ? 'negative'" th:text="${#numbers.formatInteger(item.previous,1,'COMMA') + item.unit}"></td>
-<td class="amount" th:classappend="${item.difference() < 0} ? 'negative'" th:text="${(item.difference() > 0 ? '+' : '') + #numbers.formatInteger(item.difference(),1,'COMMA') + item.unit}"></td>
+<td class="amount" th:classappend="${item.difference() < 0} ? 'negative'">
+<span th:text="${(item.difference() > 0 ? '+' : '') + #numbers.formatInteger(item.difference(),1,'COMMA') + item.unit}"></span>
+<small th:text="${'（' + item.trend() + '）'}"></small></td>
+<td class="amount" th:with="rate=${item.percentageChange()}" th:classappend="${item.difference() < 0} ? 'negative'">
+<span th:if="${rate != null}" th:text="${(rate.signum() > 0 ? '+' : '') + rate.toPlainString() + '%'}"></span>
+<span th:if="${rate == null}" th:text="${item.previous == 0 ? '算出不可（前月0）' : '算出不可（前月マイナス）'}"></span></td>
 </tr></tbody></table></div>
+<p class="hint">増減率は（選択月 − 前月）÷ 前月 × 100を小数第1位に四捨五入します。前月が0またはマイナスの場合は算出せず、前月との差で変化を確認できます。返品費用は利益から控除し、返品は販売件数に含めません。</p>
 <h2>販売カレンダー</h2>
 <p class="hint">販売日ごとの件数と合計利益です。返品費用は元の販売日に計上します。日付を選ぶと、その日の取引を確認できます。</p>
 <p th:if="${summary.count == 0}">この月の販売はありません。</p>

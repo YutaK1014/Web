@@ -29,6 +29,28 @@ class DemoApplicationTests {
     @Autowired JdbcTemplate jdbc;
     @org.springframework.beans.factory.annotation.Value("${local.server.port}") int port;
 
+    @Test @Transactional void dashboardRendersComparisonRatesAndDirections() throws Exception {
+        jdbc.update("UPDATE transactions SET sold_date='2020-01-15', selling_price=100, selling_fee=0, shipping_cost=0, purchase_price=0 WHERE id=1");
+        jdbc.update("UPDATE transactions SET sold_date='2020-02-15', selling_price=150, selling_fee=0, shipping_cost=0, purchase_price=0 WHERE id=2");
+        jdbc.update("UPDATE transactions SET sold_date='2019-12-15', selling_price=0, selling_fee=0, shipping_cost=100, purchase_price=0 WHERE id=3");
+        var mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mvc.perform(get("/dashboard").param("month", "2020-02"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("+50.0%")))
+            .andExpect(content().string(containsString("（増加）")))
+            .andExpect(content().string(containsString("（変化なし）")));
+        mvc.perform(get("/dashboard").param("month", "2020-03"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("-100.0%")))
+            .andExpect(content().string(containsString("（減少）")));
+        mvc.perform(get("/dashboard").param("month", "2020-04"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("算出不可（前月0）")));
+        mvc.perform(get("/dashboard").param("month", "2020-01"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("算出不可（前月マイナス）")));
+    }
+
     @Test void dashboardRendersSelectedMonthComparisonCalendarAndDailyLinks() throws Exception {
         var mvc = MockMvcBuilders.webAppContextSetup(context).build();
         String date = jdbc.queryForObject("SELECT sold_date FROM transactions WHERE id=1", java.sql.Date.class).toString();
