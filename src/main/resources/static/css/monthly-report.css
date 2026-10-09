@@ -1,0 +1,39 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #eef1f5; color: #111; font: 14px/1.45 "Yu Gothic", "Meiryo", sans-serif; }
+main, .controls { max-width: 210mm; margin: 20px auto; padding: 12mm; background: white; }
+.controls { padding: 20px; }
+.controls form { display: inline-flex; flex-wrap: wrap; gap: 8px; margin: 12px; }
+button, input { font: inherit; padding: 8px; }
+button { cursor: pointer; }
+h1 { margin: 4px 0; font-size: 24px; }
+h2 { margin: 12px 0 5px; font-size: 16px; }
+p { margin: 5px 0; }
+header { border-bottom: 2px solid #222; padding-bottom: 8px; }
+.totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.totals div { border: 1px solid #777; padding: 8px; overflow-wrap: anywhere; }
+strong { display: block; font-size: 20px; }
+table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+th, td { border: 1px solid #999; padding: 6px; text-align: right; overflow-wrap: anywhere; }
+.chart-row { display: grid; grid-template-columns: 35px minmax(0, 1fr) 145px; align-items: center; gap: 8px; height: 17px; font-size: 11px; }
+.chart-row svg { display: block; width: 100%; height: 12px; }
+.gain { fill: #34596b; }
+.loss { fill: url(#loss-pattern); stroke: #333; stroke-width: 0.3; }
+.amount { text-align: right; font-variant-numeric: tabular-nums; }
+.note, footer { font-size: 10px; }
+footer { border-top: 1px solid #777; margin-top: 12px; padding-top: 6px; }
+@media screen and (max-width: 600px) {
+  main { padding: 16px; }
+  strong { font-size: 16px; }
+  .totals { gap: 4px; }
+  th, td { font-size: 11px; padding: 4px; }
+  .chart-row { grid-template-columns: 28px minmax(0, 1fr) 110px; }
+}
+@page { size: A4 portrait; margin: 12mm; }
+@media print {
+  body { background: white; font-size: 10pt; }
+  .controls { display: none !important; }
+  main { width: 100%; max-width: none; padding: 0; margin: 0; }
+  header, section, footer, tr { break-inside: avoid; }
+  h2 { break-after: avoid; }
+  .chart-row { height: 4.3mm; }
+}

@@ -118,6 +118,26 @@ public class PageController {
         return "reports";
     }
 
+    @GetMapping("/reports/monthly")
+    public String monthlyReport(@RequestParam(required = false) String month, Model model) {
+        YearMonth selected;
+        try {
+            selected = month == null ? YearMonth.now() : YearMonth.parse(month);
+            if (selected.getYear() < 1000 || selected.getYear() > 9999)
+                throw new java.time.DateTimeException("year");
+        } catch (java.time.DateTimeException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "表示月は1000年01月〜9999年12月で入力してください。");
+        }
+        var target = selected;
+        var rows = reports.all().stream().filter(t -> YearMonth.from(t.getSoldDate()).equals(target)).toList();
+        model.addAttribute("month", selected);
+        model.addAttribute("issuedOn", LocalDate.now());
+        model.addAttribute("summary", ReportService.summarize(rows));
+        model.addAttribute("chart", reports.chart(reports.daily(rows, selected)));
+        model.addAttribute("empty", rows.isEmpty());
+        return "monthly-report";
+    }
+
     @GetMapping("/settings")
     public String settings(Model model) {
         model.addAttribute("settings", marketplaces.settings());

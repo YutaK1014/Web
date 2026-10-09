@@ -12,6 +12,7 @@
 <a th:if="${nextMonth.year <= 9999}" th:href="@{/dashboard(month=${nextMonth})}">次の月</a>
 </div></form>
 <h2 th:text="${month + ' の収支'}"></h2>
+<p><a class="button" th:href="@{/reports/monthly(month=${month})}">この月のレポートをPDF保存・印刷</a></p>
 <section th:replace="~{fragments :: summary(${summary})}"></section>
 <h2>前月との比較</h2>
 <p class="hint">選択月と前月の各月全体に登録された取引を比較します。今月は登録済み分の集計です。平均利益は利益÷販売件数を1円単位に四捨五入し、販売0件の月は0円として表示します。</p>

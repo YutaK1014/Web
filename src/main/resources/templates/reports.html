@@ -3,6 +3,11 @@
 <head th:replace="~{fragments :: head}"></head>
 <body><main class=""><nav th:replace="~{fragments :: nav}"></nav>
 <h1>収支レポート</h1>
+<h2>月次レポートのPDF保存</h2>
+<form class="filters" method="get" th:action="@{/reports/monthly}">
+<label for="report-month">保存する月</label><input type="month" id="report-month" name="month" min="1000-01" max="9999-12" th:value="${year + '-01'}" required>
+<button class="button" type="submit">月次レポートを開く</button></form>
+<p class="hint">売上・経費・利益・日別利益グラフをまとめて、印刷画面からPDFに保存できます。</p>
 <form class="filters" method="get" th:action="@{/reports}"><label for="year">集計する年</label><input type="number" name="year" id="year" min="1000" max="9999" th:value="${year}" required><button class="button" type="submit">表示する</button></form>
 <h2 th:text="${year + '年の収支'}"></h2><section th:replace="~{fragments :: summary(${summary})}"></section>
 <h2>月別利益グラフ</h2><section th:replace="~{fragments :: chart(${chart})}"></section>

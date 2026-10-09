@@ -1,5 +1,7 @@
 # Java / Spring Boot設計
 
+月次PDF保存：PageController.monthlyReportが月の検証と画面へのデータ供給、ReportService.dailyとSummary.expensesが日別・経費集計を担当する。monthly-report.html・monthly-report.cssでA4印刷用HTML/SVGを描画し、monthly-report.jsからwindow.printを呼ぶ。PDFはブラウザーの印刷機能で生成する。MonthlyReportTestsでうるう日、月境界、返品、赤字、空月、入力不正と描画を確認する。
+
 入力途中の下書きは `static/js/form-draft.js` と共通フラグメントで扱う。TransactionController・PageControllerは登録成功時のみ下書きのキー・送信された版をflash属性で通知し、ブラウザーで該当版を削除する。下書き用のDB・Repositoryは追加しない。
 
 2026-10-06更新。返品・送料／梱包テンプレート・値下げ試算・前月比較／カレンダー・画面サイズ対応を含む構成を示す。

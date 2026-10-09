@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class ReportService {
     public record Summary(long sales, long profit, long shipping, long fees, long purchases, long count,
-                          long returnCosts, long returnCount) {}
+                          long returnCosts, long returnCount) {
+        public long expenses() { return shipping + fees + purchases + returnCosts; }
+    }
     public record Group(String label, Summary summary) {}
     public record Bar(String label, long profit, double width) {}
     public record Comparison(String label, String unit, long current, long previous) {
@@ -93,6 +95,17 @@ public class ReportService {
             groups.add(new Group(target.toString(), summarize(rows.stream().filter(t -> YearMonth.from(t.getSoldDate()).equals(target)).toList())));
         }
         return groups;
+    }
+
+    public List<Group> daily(List<Transaction> rows, YearMonth month) {
+        Map<LocalDate, List<Transaction>> days = new HashMap<>();
+        for (Transaction row : rows) {
+            if (YearMonth.from(row.getSoldDate()).equals(month))
+                days.computeIfAbsent(row.getSoldDate(), key -> new ArrayList<>()).add(row);
+        }
+        return month.atDay(1).datesUntil(month.atEndOfMonth().plusDays(1))
+            .map(date -> new Group(date.getDayOfMonth() + "日", summarize(days.getOrDefault(date, List.of()))))
+            .toList();
     }
 
     public List<Group> yearly(List<Transaction> rows) {

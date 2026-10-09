@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title th:text="${'月次レポート_' + month + '_もうけメモ'}"></title>
+<link rel="stylesheet" th:href="@{/css/monthly-report.css}">
+<script defer th:src="@{/js/monthly-report.js}"></script>
+</head>
+<body>
+<div class="controls">
+<a th:href="@{/reports(year=${month.year})}">収支レポートへ戻る</a>
+<form method="get" th:action="@{/reports/monthly}">
+<label for="month">対象月</label><input type="month" name="month" id="month" th:value="${month}" min="1000-01" max="9999-12" required>
+<button type="submit">表示する</button></form>
+<button type="button" id="print-report" hidden>PDF保存・印刷</button>
+<p>印刷画面で「PDFに保存」を選んでください。用紙はA4・縦向き、倍率は100%、ヘッダーとフッターはオフを推奨します。</p>
+<noscript><p>ブラウザーのメニューから「印刷」を開いてPDFに保存してください。</p></noscript>
+</div>
+<main>
+<header><span>もうけメモ</span><h1>月次収支レポート</h1>
+<p th:text="${month.year + '年' + month.monthValue + '月（' + month.atDay(1) + ' ～ ' + month.atEndOfMonth() + '）'}"></p>
+<p th:text="${'作成日：' + issuedOn}"></p>
+<p th:if="${@environment.getProperty('app.demo', 'false') == 'true'}">公開デモの共有データによるレポート</p></header>
+<section class="totals" aria-label="月次収支合計">
+<div>売上<strong id="sales" th:text="${#numbers.formatInteger(summary.sales,1,'COMMA') + '円'}"></strong></div>
+<div>経費合計<strong id="expenses" th:text="${#numbers.formatInteger(summary.expenses(),1,'COMMA') + '円'}"></strong></div>
+<div>利益<strong id="profit" th:text="${#numbers.formatInteger(summary.profit,1,'COMMA') + '円'}"></strong></div>
+</section>
+<p th:text="${'販売件数：' + summary.count + '件 ／ 返品件数：' + summary.returnCount + '件'}"></p>
+<p th:if="${empty}">対象月の取引はありません（すべて0円）。</p>
+<section><h2>経費内訳</h2><table><thead><tr><th scope="col">送料・梱包費</th><th scope="col">販売手数料</th><th scope="col">仕入価格</th><th scope="col">返品費用</th></tr></thead>
+<tbody><tr><td th:text="${#numbers.formatInteger(summary.shipping,1,'COMMA') + '円'}"></td>
+<td th:text="${#numbers.formatInteger(summary.fees,1,'COMMA') + '円'}"></td>
+<td th:text="${#numbers.formatInteger(summary.purchases,1,'COMMA') + '円'}"></td>
+<td th:text="${#numbers.formatInteger(summary.returnCosts,1,'COMMA') + '円'}"></td></tr></tbody></table></section>
+<section class="daily-chart"><h2>日別利益グラフ</h2>
+<p class="note">棒の長さは利益・損失の絶対額です。損失は「−」の金額と斜線で表示します。</p>
+<div class="chart-row" th:each="bar : ${chart}">
+<span th:text="${bar.label}"></span>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true">
+<rect x="0" y="1" height="6" th:attr="width=${bar.width}" th:class="${bar.profit < 0 ? 'loss' : 'gain'}"/>
+</svg>
+<span class="amount" th:text="${#numbers.formatInteger(bar.profit,1,'COMMA') + '円'}"></span></div></section>
+<footer><p>利益＝売上−経費合計。販売日を基準に、作成時点で登録済みの取引を集計しています。</p>
+<p>返品は元の売上・経費を除外し、返品費用のみを元の販売月に計上します。独立した購入履歴は含みません。</p></footer>
+</main>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true"><defs><pattern id="loss-pattern" width="3" height="3" patternUnits="userSpaceOnUse"><rect width="3" height="3" fill="white"/><path d="M0 0L3 3M-1 2L1 4M2 -1L4 1" stroke="#333" stroke-width="0.7"/></pattern></defs></svg>
+</body></html>
