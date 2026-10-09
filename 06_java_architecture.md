@@ -1,10 +1,6 @@
 # Java / Spring Boot設計
 
-月次PDF保存：PageController.monthlyReportが月の検証と画面へのデータ供給、ReportService.dailyとSummary.expensesが日別・経費集計を担当する。monthly-report.html・monthly-report.cssでA4印刷用HTML/SVGを描画し、monthly-report.jsからwindow.printを呼ぶ。PDFはブラウザーの印刷機能で生成する。MonthlyReportTestsでうるう日、月境界、返品、赤字、空月、入力不正と描画を確認する。
-
-入力途中の下書きは `static/js/form-draft.js` と共通フラグメントで扱う。TransactionController・PageControllerは登録成功時のみ下書きのキー・送信された版をflash属性で通知し、ブラウザーで該当版を削除する。下書き用のDB・Repositoryは追加しない。
-
-2026-10-06更新。返品・送料／梱包テンプレート・値下げ試算・前月比較／カレンダー・画面サイズ対応を含む構成を示す。
+2026-10-09更新。返品・送料／梱包テンプレート・値下げ試算・前月比較／カレンダー・画面サイズ対応に加え、増減率・下書き・月次PDF保存を含む構成を示す。
 
 2026-10-06追加：`ShippingTemplateController`は管理画面とCRUDのルーティング、`ShippingTemplateForm`は文字数・金額・合計の検証、`ShippingTemplateService`は保存・取得・削除と存在チェック、`ShippingTemplateRepository`はMyBatisによる`shipping_templates`操作を担当する。`ShippingTemplate`が保存項目と合計金額を表す。`TransactionController`がフォーム用の一覧を取得し、`transaction-form.js`が選択時の費用コピーを行う。
 
@@ -61,9 +57,13 @@ src/main/java/com/example/cashflow/
 src/main/resources/
 ├─ templates/
 ├─ static/
-│  ├─ css/transactions.css
+│  ├─ css/
+│  │  ├─ transactions.css
+│  │  └─ monthly-report.css
 │  └─ js/
 │     ├─ transaction-form.js
+│     ├─ form-draft.js
+│     ├─ monthly-report.js
 │     └─ theme.js
 ├─ schema.sql
 ├─ demo-data.sql
@@ -75,7 +75,7 @@ src/main/resources/
 
 | クラス | 担当 |
 | --- | --- |
-| PageController | トップ・ダッシュボード・レポート・設定の表示、設定保存、購入登録・検索・購入タグ編集 |
+| PageController | トップ・ダッシュボード・レポート・月次印刷レポート・設定の表示、設定保存、購入登録・検索・購入タグ編集。購入登録成功時の下書き版通知 |
 | TransactionController | 取引一覧・登録・編集・返品登録／費用更新・削除確認・削除、CSV出力。旧登録URLからのリダイレクト、フォームへの送料テンプレート供給 |
 | ShippingTemplateController | 送料・梱包テンプレートの一覧・登録・編集・削除確認・削除 |
 | DiscountController | 値下げシミュレーションの入力・計算結果・入力エラー表示 |
@@ -89,7 +89,7 @@ src/main/resources/
 | --- | --- |
 | TransactionService | search・get・save・saveReturn・delete。入力検証、通常編集と返品登録の排他制御、DBと画像の整合性管理 |
 | MarketplaceService | rates・rate・rounding・calculateFee・settings・save・monthlyGoal。料率・端数処理・利益目標の管理 |
-| ReportService | all・summarize・monthly・yearly・byMarketplace・chart・monthSummary・compare・calendar。返品を考慮した集計、前月比較・カレンダー・グラフの生成 |
+| ReportService | all・summarize・daily・monthly・yearly・byMarketplace・chart・monthSummary・compare・calendar。返品を考慮した集計、前月比較・カレンダー・日別／月別グラフの生成 |
 | ShippingTemplateService | all・get・save・delete。テンプレート取得・保存・削除、未登録IDの404処理 |
 | DiscountService | calculate。候補価格ごとの手数料再計算と最低価格の二分探索。Resultに表示結果を保持し、DBには保存しない |
 | PhotoStorage | save・delete。画像内容検証、PNG変換、ファイル保存・削除 |
@@ -102,6 +102,14 @@ src/main/resources/
 手数料はMarketplaceService.calculateFee、利益はTransaction.getProfitで計算する。
 TransactionService.saveは新規登録と編集を共通化し、IDの有無で処理を切り替える。
 
+## 下書き・月次レポート・前月比の構成
+
+- `PageController.monthlyReport`がGET `/reports/monthly`を受け付け、月を検証して`month`・`issuedOn`・`summary`・`chart`・`empty`をモデルへ設定する。`ReportService.daily`が月内全日のGroupを生成し、既存のchartへ渡す。`Summary.expenses()`が経費合計を返す。
+- `monthly-report.html`・`monthly-report.css`で専用のA4印刷用HTML/SVGを描画し、`monthly-report.js`から`window.print()`を呼ぶ。PDFライブラリー・PDF配信API・保存用Repositoryは追加しない。
+- 下書きは`form-draft.js`と`fragments.html`の`draft`フラグメントで扱う。homeとtransaction-formの`data-draft-key`により対象フォームを区別する。
+- `TransactionController.create/update`と`PageController.savePurchase`は`draftRevision`を受け取る（省略時は空文字）。保存成功時だけ`savedDraftKey`と`savedDraftRevision`をflash属性に渡す。共通navに出力したマーカーとlocalStorageの版を照合し、ブラウザーで該当版を削除する。専用DTO・DB・Repositoryは追加しない。
+- `ReportService.Comparison`は`difference()`に加えて`trend()`と`percentageChange()`を持つ。前月値が正ならBigDecimalで小数第1位へHALF_UPし、0以下ならnullを返す。`dashboard.html`が増減方向・率・算出不可の理由を表示する。
+
 ## Repository
 
 購入履歴の追加構成：PageControllerがホーム表示とPOST /purchasesを担当し、
@@ -113,6 +121,8 @@ MyBatisのMapperとSQLアノテーションでDBを操作する。
 
 - TransactionRepository：search・findById・countImageReferences・insert・update・delete・lockById・saveReturn。transaction_returnsをLEFT JOINして取得し、返品費用をUPSERTする。
 - ShippingTemplateRepository：findAll・findById・insert・update・delete。一覧はID昇順、更新・削除は影響行数で存在を確認する。
+- PurchaseRepository：findAll・findById・insert。購入日降順・同日はID降順で全件を取得し、PurchaseServiceがタグと期間をJava側で絞り込む。
+- TagRepository：transactionTags・purchaseTagsでタグ列昇順に取得し、clearTransaction・clearPurchase・addTransaction・addPurchaseで置換する。売却はSQLで商品名・サイト・販売期間を絞った後、TransactionServiceがタグの完全一致をJava側で適用する。
 - MarketplaceSettingRepository：findAll・findByMarketplaceName・insert・update、getOption・insertOption・updateOption。
 - ユーザー情報用のEntity・Repository・Service・Controllerは設けない。
 - usersテーブルとuser_id列はDB互換用で、アプリのユーザー管理には使用しない。
@@ -164,12 +174,19 @@ MyBatisのMapperとSQLアノテーションでDBを操作する。
 
 ## 共通画面・JavaScript・CSS
 
-- fragments.htmlの共通viewport・ナビゲーション・集計部品を各画面で利用する。登録リンクは`/sales/register`、値下げ試算リンクは`/discount-simulator`。
+- 月次レポートを除く通常画面ではfragments.htmlの共通viewport・ナビゲーション・集計部品を利用する。登録リンクは`/sales/register`、値下げ試算リンクは`/discount-simulator`。
 - transaction-form.jsは手数料・利益のプレビュー、写真プレビュー、送料テンプレート選択時の費用コピーを担当する。保存時の金額はJavaで再検証・再計算する。
+- form-draft.jsは入力・変更・送信時の保存、手動復元・削除、成功時の版一致削除、storageイベントによる保存状態の案内を担当する。transaction-form.jsはdraftrestoredイベントでテンプレート選択表示を解除し、料率・利益のプレビューを更新する。
+- monthly-reportは共通head・navを使わず、専用CSSと印刷スクリプトを読み込む。印刷CSSはA4縦・余白12mm、操作欄非表示、改ページの抑制と損失の斜線表示を指定する。
 - transactions.cssは1024px以下でメニュー3列・検索欄2列、600px以下でメニュー2列・入力欄1列へ切り替える。狭い画面のグラフは数値の下へ棒を配置し、表・カレンダーはコンテナ内で横スクロールする。
 - theme.jsはブラウザーにテーマを保存し、ダークモードにも共通のレスポンシブレイアウトを使用する。値下げ試算はJavaScriptに依存せずPOSTで計算する。
 
 ## テスト
+
+- `MonthlyReportTests`：うるう日・月境界・返品・赤字の集計、日別合計と月合計の一致、空月・対応年月の上下限・不正入力、画面描画と導線の対象月を検証する。ブラウザーの実際のPDF保存・印刷結果はこのテストの対象外。
+- `TransactionRegistrationTests`・`PurchaseHistoryTests`：下書きキー付きフォーム、成功時のキー・版通知、入力エラー時に削除通知しないことを確認する。
+- `src/test/js/form-draft-tests.html`：テスト専用ブラウザープロファイルで開いて`ALL PASSED`を確認する。自動保存・再表示後の復元・送信失敗時の保持・成功時の版照合・フォーム別分離・削除・保存不可・破損を検証する。該当キーを初期化するため実利用のプロファイルは使わない。Mavenとは別に実行する。
+- `DashboardReportTests`：前月値が正の増減率・四捨五入・増減方向と、前月値が0／負の場合の算出不可を検証する。`DemoApplicationTests`で画面の率・理由の表示も確認する。
 
 ShippingTemplateTestsで管理CRUD、入力値保持、0円・上限・合計上限、HTMLエスケープ、過去の取引金額に影響しないことを確認する。DiscountSimulationTestsで試算の境界値・丸め・最低価格の最小性・入力不正・設定不足・非保存を確認する。TransactionReturnTestsで返品登録・更新・元データ保持・集計・CSV・削除連動を確認する。
 
