@@ -14,7 +14,8 @@
 <p>購入したものを記録して、あとから振り返れます。</p>
 <p class="hint">購入履歴は売却取引と別に保存され、利益集計には反映されません。</p>
 <p th:if="${successMessage}" th:text="${successMessage}" class="success" role="status"></p>
-<form class="transaction-form" th:action="@{/purchases}" th:object="${purchaseForm}" method="post">
+<form class="transaction-form" th:action="@{/purchases}" th:object="${purchaseForm}" method="post" data-draft-key="purchase-new">
+<section th:replace="~{fragments :: draft}"></section>
 <h3>購入したものを登録</h3>
 <div th:if="${#fields.hasErrors('*')}" class="error" role="alert"><p>入力内容を確認してください。</p>
 <ul><li th:each="error : ${#fields.errors('*')}" th:text="${error}"></li></ul></div>

@@ -79,6 +79,28 @@ class TransactionRegistrationTests {
         return repository.search("","",null,null).getFirst().getId();
     }
 
+    @Test void draftCleanupRequiresSuccessfulSaveAndSeparatesEditKey() throws Exception {
+        mvc.perform(get("/sales/register"))
+            .andExpect(content().string(containsString("data-draft-key=\"sale-new\"")));
+        mvc.perform(valid("/transactions").param("draftRevision", "revision-new"))
+            .andExpect(flash().attribute("savedDraftKey", "sale-new"))
+            .andExpect(flash().attribute("savedDraftRevision", "revision-new"));
+        long id = repository.search("", "", null, null).getFirst().getId();
+        mvc.perform(get("/transactions/" + id + "/edit"))
+            .andExpect(content().string(containsString("data-draft-key=\"sale-" + id + "\"")));
+        mvc.perform(valid("/transactions/" + id + "/edit").param("draftRevision", "revision-edit"))
+            .andExpect(flash().attribute("savedDraftKey", "sale-" + id))
+            .andExpect(flash().attribute("savedDraftRevision", "revision-edit"));
+        var failed = mvc.perform(multipart("/transactions").param("itemName", "入力中")
+            .param("draftRevision", "revision-failed"))
+            .andExpect(view().name("transaction-form")).andReturn();
+        assertFalse(failed.getFlashMap().containsKey("savedDraftKey"));
+        mvc.perform(get("/transactions").flashAttr("savedDraftKey", "sale-new")
+            .flashAttr("savedDraftRevision", "revision-new"))
+            .andExpect(content().string(containsString("data-saved-draft=\"sale-new\"")))
+            .andExpect(content().string(containsString("data-saved-revision=\"revision-new\"")));
+    }
+
     @Test void savesServerCalculatedFeesDatesAndMemoAndRendersList() throws Exception {
         long id = create();
         var row = repository.findById(id);

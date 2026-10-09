@@ -5,9 +5,11 @@
 <title>もうけメモ | 売った利益が、すぐわかる。</title>
 <link rel="stylesheet" th:href="@{/css/transactions.css}">
 <script defer th:src="@{/js/theme.js}"></script>
+<script defer th:src="@{/js/form-draft.js}"></script>
 </head>
 <body>
 <nav th:fragment="nav" aria-label="メインメニュー" class="navigation">
+<span hidden th:if="${savedDraftKey != null}" th:attr="data-saved-draft=${savedDraftKey},data-saved-revision=${savedDraftRevision}"></span>
 <p class="demo-notice" th:if="${@environment.getProperty('app.demo', 'false') == 'true'}">公開デモ：データは閲覧者全員で共有され、再起動でリセットされます。個人情報や実際の取引・写真は入力しないでください。手数料率は体験用の仮設定です。</p>
 <a class="brand" th:href="@{/}">もうけメモ</a>
 <a th:href="@{/dashboard}">ダッシュボード</a><a th:href="@{/transactions}">取引一覧</a>
@@ -15,6 +17,11 @@
 <a th:href="@{/discount-simulator}">値下げシミュレーション</a>
 <a th:href="@{/settings}">設定</a><button id="theme-toggle" type="button" aria-pressed="false">ダークモード</button>
 </nav>
+<section th:fragment="draft" class="draft-controls" hidden aria-label="入力途中の下書き">
+<p class="hint">入力途中の内容は、このブラウザーに自動保存します。写真は保存されないため、復元後に選び直してください。下書きは登録・集計には反映されません。</p>
+<p data-draft-status role="status" aria-live="polite"></p>
+<div class="form-actions"><button type="button" data-draft-restore hidden>下書きを復元</button><button type="button" data-draft-discard hidden>下書きを削除</button></div>
+</section>
 <section th:fragment="summary(summary)" class="summary-grid" aria-label="収支合計">
 <div><span>売上</span><strong th:text="${#numbers.formatInteger(summary.sales,1,'COMMA') + '円'}"></strong></div>
 <div><span>利益</span><strong th:classappend="${summary.profit < 0} ? 'negative'" th:text="${#numbers.formatInteger(summary.profit,1,'COMMA') + '円'}"></strong></div>

@@ -1,5 +1,7 @@
 # Java / Spring Boot設計
 
+入力途中の下書きは `static/js/form-draft.js` と共通フラグメントで扱う。TransactionController・PageControllerは登録成功時のみ下書きのキー・送信された版をflash属性で通知し、ブラウザーで該当版を削除する。下書き用のDB・Repositoryは追加しない。
+
 2026-10-06更新。返品・送料／梱包テンプレート・値下げ試算・前月比較／カレンダー・画面サイズ対応を含む構成を示す。
 
 2026-10-06追加：`ShippingTemplateController`は管理画面とCRUDのルーティング、`ShippingTemplateForm`は文字数・金額・合計の検証、`ShippingTemplateService`は保存・取得・削除と存在チェック、`ShippingTemplateRepository`はMyBatisによる`shipping_templates`操作を担当する。`ShippingTemplate`が保存項目と合計金額を表す。`TransactionController`がフォーム用の一覧を取得し、`transaction-form.js`が選択時の費用コピーを行う。

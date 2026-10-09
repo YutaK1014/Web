@@ -61,6 +61,12 @@
     [price, shipping, purchase].forEach(input => input.addEventListener('input', updateProfit));
     rate.addEventListener('input', () => { if (platform.value === 'その他') otherRate = rate.value; updateProfit(); });
     platform.addEventListener('change', updatePlatform);
+    form.addEventListener('draftrestored', () => {
+        otherRate = platform.value === 'その他' ? rate.value : '';
+        shippingTemplate.value = '';
+        templateDetail.textContent = '';
+        updatePlatform();
+    });
     photo.addEventListener('change', () => {
         if (photoUrl) URL.revokeObjectURL(photoUrl);
         preview.hidden = true; preview.removeAttribute('src'); photoError.textContent = ''; photo.setCustomValidity('');

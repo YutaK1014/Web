@@ -71,23 +71,27 @@ public class TransactionController {
 
     @PostMapping("/transactions")
     public String create(@ModelAttribute("form") TransactionForm form, BindingResult errors,
+                         @RequestParam(defaultValue = "") String draftRevision,
                          Model model, HttpServletResponse response, RedirectAttributes redirect) {
-        return save(null, form, errors, model, response, redirect);
+        return save(null, form, errors, model, response, redirect, draftRevision);
     }
 
     @PostMapping("/transactions/{id}/edit")
     public String update(@PathVariable long id, @ModelAttribute("form") TransactionForm form, BindingResult errors,
+                         @RequestParam(defaultValue = "") String draftRevision,
                          Model model, HttpServletResponse response, RedirectAttributes redirect) {
         service.get(id);
-        return save(id, form, errors, model, response, redirect);
+        return save(id, form, errors, model, response, redirect, draftRevision);
     }
 
     private String save(Long id, TransactionForm form, BindingResult errors, Model model,
-                        HttpServletResponse response, RedirectAttributes redirect) {
+                        HttpServletResponse response, RedirectAttributes redirect, String draftRevision) {
         form.validate(errors);
         if (!errors.hasErrors()) {
             try {
                 service.save(id, form);
+                redirect.addFlashAttribute("savedDraftKey", id == null ? "sale-new" : "sale-" + id);
+                redirect.addFlashAttribute("savedDraftRevision", draftRevision);
                 redirect.addFlashAttribute("successMessage", id == null ? "取引を登録しました。" : "取引を更新しました。");
                 return "redirect:/transactions";
             } catch (IllegalArgumentException exception) {

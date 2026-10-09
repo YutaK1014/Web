@@ -1,0 +1,116 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Form draft browser tests</title>
+<pre id="result">RUNNING</pre>
+<script>
+(async () => {
+    const prefix = 'mouke-memo:draft:v1:';
+    const clearDrafts = () => ['sale-new', 'sale-1', 'sale-2', 'purchase-new']
+        .forEach(key => localStorage.removeItem(prefix + key));
+    const scriptUrl = new URL('../../main/resources/static/js/form-draft.js', location.href).href;
+    const results = [];
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+    const markup = key => `<form data-draft-key="${key}">
+        <section class="draft-controls" hidden><p data-draft-status></p>
+        <button type="button" data-draft-restore hidden>restore</button>
+        <button type="button" data-draft-discard hidden>discard</button></section>
+        <input name="itemName" required><input name="amount" required>
+        <textarea name="memo"></textarea><input name="removePhoto" type="checkbox">
+        <input name="photo" type="file"><input name="internal" type="hidden" value="excluded">
+        </form>`;
+    async function page(html, storageBlocked = false) {
+        const frame = document.createElement('iframe');
+        document.body.append(frame);
+        const win = frame.contentWindow;
+        const doc = win.document;
+        doc.body.innerHTML = html;
+        if (storageBlocked) Object.defineProperty(win, 'localStorage', { get() { throw new Error('blocked'); } });
+        const script = doc.createElement('script');
+        script.src = scriptUrl;
+        await new Promise((resolve, reject) => {
+            script.onload = resolve; script.onerror = reject; doc.head.append(script);
+        });
+        return { win, doc, frame, form: doc.querySelector('form') };
+    }
+    const input = (p, name, value) => {
+        p.form.elements[name].value = value;
+        p.form.elements[name].dispatchEvent(new p.win.Event('input', { bubbles: true }));
+    };
+    const stored = key => JSON.parse(localStorage.getItem(prefix + key));
+    async function test(name, run) {
+        clearDrafts();
+        document.querySelectorAll('iframe').forEach(frame => frame.remove());
+        await run(); results.push('PASS ' + name);
+    }
+    try {
+        await test('Incomplete input persists and restores after navigation; files and hidden fields excluded', async () => {
+            let p = await page(markup('sale-new'));
+            input(p, 'itemName', '途中の商品');
+            input(p, 'memo', '一行目\n二行目 <script>');
+            p.form.elements.removePhoto.checked = true;
+            p.form.elements.removePhoto.dispatchEvent(new p.win.Event('change', { bubbles: true }));
+            const draft = stored('sale-new');
+            assert(draft.values.amount === '', 'incomplete input lost');
+            assert(!('photo' in draft.values) && !('internal' in draft.values), 'excluded fields saved');
+            p.frame.remove(); p = await page(markup('sale-new'));
+            assert(p.form.elements.itemName.value === '', 'draft restored without user action');
+            assert(!p.doc.querySelector('[data-draft-restore]').hidden, 'restore missing');
+            p.doc.querySelector('[data-draft-restore]').click();
+            assert(p.form.elements.itemName.value === '途中の商品', 'name lost');
+            assert(p.form.elements.memo.value === '一行目\n二行目 <script>', 'memo lost');
+            assert(p.form.elements.removePhoto.checked, 'checkbox lost');
+        });
+        await test('Draft remains on submission/failure and server-rendered input is preserved', async () => {
+            let p = await page(markup('sale-new'));
+            input(p, 'itemName', '送信前');
+            p.form.dispatchEvent(new p.win.Event('submit', { cancelable: true }));
+            assert(stored('sale-new').revision === p.form.elements.draftRevision.value, 'submission removed draft');
+            p.frame.remove();
+            p = await page(markup('sale-new').replace('name="itemName" required', 'name="itemName" required value="エラー入力"'));
+            assert(p.form.elements.itemName.value === 'エラー入力', 'error input overwritten');
+        });
+        await test('Success clears only the matching revision and key', async () => {
+            const p = await page(markup('sale-new'));
+            input(p, 'itemName', '保存対象');
+            const old = stored('sale-new');
+            input(p, 'itemName', '別タブの新しい版');
+            p.frame.remove();
+            await page(`<span data-saved-draft="sale-new" data-saved-revision="${old.revision}"></span>`);
+            assert(stored('sale-new').values.itemName === '別タブの新しい版', 'newer revision removed');
+            localStorage.setItem(prefix + 'purchase-new', JSON.stringify(old));
+            await page(`<span data-saved-draft="sale-new" data-saved-revision="${stored('sale-new').revision}"></span>`);
+            assert(!stored('sale-new') && stored('purchase-new'), 'wrong key cleared');
+        });
+        await test('Create, purchase and different edit IDs remain independent', async () => {
+            for (const key of ['sale-new', 'sale-1', 'sale-2', 'purchase-new']) {
+                const p = await page(markup(key)); input(p, 'itemName', key); p.frame.remove();
+            }
+            for (const key of ['sale-new', 'sale-1', 'sale-2', 'purchase-new']) {
+                assert(stored(key).values.itemName === key, 'draft keys collide');
+            }
+        });
+        await test('Discard removes storage, keeps inputs, and next input resumes autosave', async () => {
+            const p = await page(markup('sale-new')); input(p, 'itemName', '残す入力');
+            p.doc.querySelector('[data-draft-discard]').click();
+            assert(!stored('sale-new') && p.form.elements.itemName.value === '残す入力', 'discard behavior');
+            input(p, 'memo', '再開'); assert(stored('sale-new').values.memo === '再開', 'autosave stopped');
+        });
+        await test('Corrupt storage and unavailable storage do not prevent normal input', async () => {
+            localStorage.setItem(prefix + 'sale-new', '{broken');
+            let p = await page(markup('sale-new'));
+            assert(p.doc.querySelector('[data-draft-status]').textContent.includes('読み書きできません'), 'no corruption notice');
+            p.doc.querySelector('[data-draft-discard]').click(); assert(!stored('sale-new'), 'cannot discard corrupt draft');
+            p.frame.remove(); p = await page(markup('sale-new'), true);
+            input(p, 'itemName', '保存不可でも入力可能');
+            assert(p.form.elements.itemName.value === '保存不可でも入力可能', 'input lost');
+            assert(p.doc.querySelector('[data-draft-status]').textContent.includes('読み書きできません'), 'no failure notice');
+        });
+        document.getElementById('result').textContent = results.join('\n') + '\nALL PASSED';
+    } catch (error) {
+        document.getElementById('result').textContent = results.join('\n') + '\nFAIL ' + error.stack;
+    } finally {
+        clearDrafts();
+        document.querySelectorAll('iframe').forEach(frame => frame.remove());
+    }
+})();
+</script>

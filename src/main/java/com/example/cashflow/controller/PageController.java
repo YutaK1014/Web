@@ -41,6 +41,7 @@ public class PageController {
 
     @PostMapping("/purchases")
     public String savePurchase(@ModelAttribute("purchaseForm") PurchaseForm form, BindingResult errors,
+                               @RequestParam(defaultValue = "") String draftRevision,
                                Model model, RedirectAttributes redirect) {
         purchases.save(form, errors);
         if (errors.hasErrors()) {
@@ -50,6 +51,8 @@ public class PageController {
             return "home";
         }
         redirect.addFlashAttribute("successMessage", "購入履歴を登録しました。");
+        redirect.addFlashAttribute("savedDraftKey", "purchase-new");
+        redirect.addFlashAttribute("savedDraftRevision", draftRevision);
         return "redirect:/#purchase-history";
     }
 

@@ -37,7 +37,20 @@ class PurchaseHistoryTests {
     @Test void homeShowsEmptyHistoryAndRegistrationForm() throws Exception {
         mvc.perform(get("/")).andExpect(status().isOk())
             .andExpect(content().string(containsString("購入履歴はまだありません")))
-            .andExpect(content().string(containsString("購入履歴を登録する")));
+            .andExpect(content().string(containsString("購入履歴を登録する")))
+            .andExpect(content().string(containsString("data-draft-key=\"purchase-new\"")));
+    }
+
+    @Test void draftCleanupRequiresSuccessfulRegistration() throws Exception {
+        mvc.perform(post("/purchases").param("itemName", "下書きの商品")
+            .param("purchasedDate", "2026-10-09").param("amount", "3000")
+            .param("draftRevision", "purchase-revision"))
+            .andExpect(flash().attribute("savedDraftKey", "purchase-new"))
+            .andExpect(flash().attribute("savedDraftRevision", "purchase-revision"));
+        var failed = mvc.perform(post("/purchases").param("itemName", "入力中")
+            .param("draftRevision", "failed-revision"))
+            .andExpect(view().name("home")).andReturn();
+        assertFalse(failed.getFlashMap().containsKey("savedDraftKey"));
     }
 
     @Test void persistsAndDisplaysPurchasesInDateThenIdOrderWithoutChangingSales() throws Exception {
