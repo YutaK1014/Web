@@ -17,7 +17,7 @@
 <form class="transaction-form" th:action="@{/purchases}" th:object="${purchaseForm}" method="post" data-draft-key="purchase-new">
 <section th:replace="~{fragments :: draft}"></section>
 <h3>購入したものを登録</h3>
-<div th:if="${#fields.hasErrors('*')}" class="error" role="alert"><p>入力内容を確認してください。</p>
+<div th:if="${#fields.hasErrors('*')}" class="error" role="alert"><p>購入履歴を登録できませんでした。</p>
 <ul><li th:each="error : ${#fields.errors('*')}" th:text="${error}"></li></ul></div>
 <div class="filter-grid">
 <div class="field"><label for="purchase-item">商品名<span class="required">必須</span></label>
@@ -53,7 +53,8 @@ th:attr="aria-invalid=${#fields.hasErrors('memo')}"></textarea></div>
 <input id="purchase-tag-search" type="search" name="tag" th:value="${tag}" maxlength="30" placeholder="例：衣類">
 <div class="form-actions"><button class="button" type="submit">検索・絞り込み</button><a th:href="@{/#purchase-history}">条件をクリア</a></div>
 </form>
-<p th:if="${#lists.isEmpty(purchases)}" class="empty" th:text="${#strings.isEmpty(tag) and #strings.isEmpty(purchaseFilter.period) and #strings.isEmpty(purchaseFilter.from) and #strings.isEmpty(purchaseFilter.to) ? '購入履歴はまだありません。購入したものを上のフォームから登録しましょう。' : '該当する購入履歴はありません。検索条件を変更するか、条件をクリアしてください。'}"></p>
+<p th:if="${purchaseHistoryUnavailable == true}" class="error" role="alert">購入履歴を読み込めませんでした。入力内容は上のフォームに保持しています。しばらく待ってから再度お試しください。</p>
+<p th:if="${purchaseHistoryUnavailable != true and #lists.isEmpty(purchases)}" class="empty" th:text="${#strings.isEmpty(tag) and #strings.isEmpty(purchaseFilter.period) and #strings.isEmpty(purchaseFilter.from) and #strings.isEmpty(purchaseFilter.to) ? '購入履歴はまだありません。購入したものを上のフォームから登録しましょう。' : '該当する購入履歴はありません。検索条件を変更するか、条件をクリアしてください。'}"></p>
 <div th:unless="${#lists.isEmpty(purchases)}" class="table-container" tabindex="0" aria-label="購入履歴一覧">
 <table><caption>購入日の新しい順に表示しています。</caption>
 <thead><tr><th scope="col">購入日</th><th scope="col">商品名</th><th scope="col">購入金額</th><th scope="col">購入先</th><th scope="col">メモ</th><th scope="col">タグ</th></tr></thead>

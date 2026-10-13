@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataAccessException;
+import org.slf4j.LoggerFactory;
 
 @Controller
 public class PageController {
@@ -42,12 +44,26 @@ public class PageController {
     @PostMapping("/purchases")
     public String savePurchase(@ModelAttribute("purchaseForm") PurchaseForm form, BindingResult errors,
                                @RequestParam(defaultValue = "") String draftRevision,
-                               Model model, RedirectAttributes redirect) {
-        purchases.save(form, errors);
+                               Model model, RedirectAttributes redirect,
+                               jakarta.servlet.http.HttpServletResponse response) {
+        try {
+            purchases.save(form, errors);
+        } catch (DataAccessException exception) {
+            LoggerFactory.getLogger(getClass()).error("購入履歴の保存に失敗しました。", exception);
+            response.setStatus(503);
+            errors.reject("save", "保存できませんでした。しばらく待ってから再度お試しください。");
+        }
         if (errors.hasErrors()) {
             model.addAttribute("purchaseFilter", new PurchaseFilter());
             model.addAttribute("tag", "");
-            model.addAttribute("purchases", purchases.all());
+            try {
+                model.addAttribute("purchases", purchases.all());
+            } catch (DataAccessException exception) {
+                LoggerFactory.getLogger(getClass()).error("購入履歴の再表示に失敗しました。", exception);
+                response.setStatus(503);
+                model.addAttribute("purchases", java.util.List.of());
+                model.addAttribute("purchaseHistoryUnavailable", true);
+            }
             return "home";
         }
         redirect.addFlashAttribute("successMessage", "購入履歴を登録しました。");

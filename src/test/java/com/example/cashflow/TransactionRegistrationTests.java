@@ -34,9 +34,11 @@ import static org.hamcrest.Matchers.containsString;
 class TransactionRegistrationTests {
     @Autowired WebApplicationContext context;
     @Autowired JdbcTemplate jdbc;
-    @Autowired TransactionRepository repository;
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+    TransactionRepository repository;
     @Autowired MarketplaceService marketplaces;
     @Autowired TransactionService service;
+    @Autowired org.mybatis.spring.SqlSessionTemplate sqlSession;
     @Autowired org.springframework.transaction.PlatformTransactionManager transactionManager;
     MockMvc mvc;
 
@@ -153,6 +155,50 @@ class TransactionRegistrationTests {
         Path replacement = Path.of("target/test-photos",repository.findById(row.getId()).getImagePath().substring("/images/".length()));
         assertTrue(Files.exists(replacement));
         service.delete(row.getId()); assertFalse(Files.exists(replacement));
+    }
+
+    @Test void concurrentPhotoReplacementAndDeletionLeaveNoFiles() throws Exception {
+        mvc.perform(valid("/transactions").file(photo())).andExpect(redirectedUrl("/transactions"));
+        var row = repository.search("", "", null, null).getFirst();
+        Path oldPhoto = Path.of("target/test-photos", row.getImagePath().substring("/images/".length()));
+        var form = com.example.cashflow.dto.TransactionForm.from(row);
+        form.setPhoto(photo());
+        var deletionReachedDatabase = new java.util.concurrent.CountDownLatch(1);
+        var deleting = new java.util.concurrent.atomic.AtomicBoolean();
+        var delegate = sqlSession.getMapper(TransactionRepository.class);
+        // With locking, deletion reaches lockById first. Without it, capture the
+        // stale read before committing the replacement to reproduce the leak.
+        org.mockito.Mockito.doAnswer(invocation -> {
+            if (deleting.get()) deletionReachedDatabase.countDown();
+            return delegate.lockById(row.getId());
+        }).when(repository).lockById(row.getId());
+        org.mockito.Mockito.doAnswer(invocation -> {
+            Object result = delegate.findById(row.getId());
+            if (deleting.get()) deletionReachedDatabase.countDown();
+            return result;
+        }).when(repository).findById(row.getId());
+        Path[] replacement = new Path[1];
+        var deletion = new java.util.concurrent.atomic.AtomicReference<java.util.concurrent.Future<?>>();
+        try (var executor = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+            new org.springframework.transaction.support.TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                try { service.save(row.getId(), form); }
+                catch (java.io.IOException exception) { throw new RuntimeException(exception); }
+                replacement[0] = Path.of("target/test-photos",
+                    repository.findById(row.getId()).getImagePath().substring("/images/".length()));
+                assertTrue(Files.exists(replacement[0]));
+                deleting.set(true);
+                deletion.set(executor.submit(() -> service.delete(row.getId())));
+                try { assertTrue(deletionReachedDatabase.await(5, java.util.concurrent.TimeUnit.SECONDS)); }
+                catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(exception);
+                }
+            });
+            deletion.get().get(10, java.util.concurrent.TimeUnit.SECONDS);
+        }
+        assertNull(repository.findById(row.getId()));
+        assertFalse(Files.exists(oldPhoto), "The replaced photo should be removed after the update commits");
+        assertFalse(Files.exists(replacement[0]), "Deletion must remove the newly committed photo too");
     }
 
     @Test void supportsLiteralKeywordDateAndPlatformFiltersAndCsvEscaping() throws Exception {

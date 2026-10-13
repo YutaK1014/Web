@@ -6,6 +6,7 @@ import com.example.cashflow.entity.Purchase;
 import com.example.cashflow.repository.PurchaseRepository;
 import com.example.cashflow.repository.TagRepository;
 import com.example.cashflow.dto.TagForm;
+import com.example.cashflow.dto.HistoryTag;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
@@ -25,22 +26,23 @@ public class PurchaseService {
     }
 
     public List<Purchase> all() {
-        var rows = repository.findAll();
-        rows.forEach(row -> row.setTags(tags.purchaseTags(row.getId())));
-        return rows;
+        return search(new PurchaseFilter());
     }
 
     public List<Purchase> search(String tag) {
-        return all().stream().filter(row -> tag.isEmpty() || row.getTags().contains(tag)).toList();
+        var filter = new PurchaseFilter();
+        filter.setTag(tag);
+        return search(filter);
     }
 
     public List<Purchase> search(PurchaseFilter filter) {
-        var start = filter.start();
-        var end = filter.end();
-        return all().stream()
-            .filter(row -> filter.getTag().isEmpty() || row.getTags().contains(filter.getTag()))
-            .filter(row -> start == null || !row.getPurchasedDate().isBefore(start))
-            .filter(row -> end == null || !row.getPurchasedDate().isAfter(end)).toList();
+        String tag = filter.getTag() == null ? "" : filter.getTag().strip();
+        var rows = repository.search(tag, filter.start(), filter.end());
+        if (rows.isEmpty()) return rows;
+        var groupedTags = HistoryTag.group(tags.purchaseTagsByIds(rows.stream().map(Purchase::getId).toList()));
+        rows.forEach(row -> row.setTags(groupedTags.getOrDefault(row.getId(), List.of())));
+        // SQL narrows candidates; preserve exact matching even with a case-insensitive DB collation.
+        return tag.isEmpty() ? rows : rows.stream().filter(row -> row.getTags().contains(tag)).toList();
     }
 
     public Purchase get(long id) {

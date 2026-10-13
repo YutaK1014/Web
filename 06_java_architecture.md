@@ -87,7 +87,7 @@ src/main/resources/
 
 | クラス | 主なメソッド・責務 |
 | --- | --- |
-| TransactionService | search・get・save・saveReturn・delete。入力検証、通常編集と返品登録の排他制御、DBと画像の整合性管理 |
+| TransactionService | search・get・save・saveReturn・delete。入力検証、通常編集・返品登録・削除の排他制御、DBと画像の整合性管理 |
 | MarketplaceService | rates・rate・rounding・calculateFee・settings・save・monthlyGoal。料率・端数処理・利益目標の管理 |
 | ReportService | all・summarize・daily・monthly・yearly・byMarketplace・chart・monthSummary・compare・calendar。返品を考慮した集計、前月比較・カレンダー・日別／月別グラフの生成 |
 | ShippingTemplateService | all・get・save・delete。テンプレート取得・保存・削除、未登録IDの404処理 |
@@ -114,15 +114,16 @@ TransactionService.saveは新規登録と編集を共通化し、IDの有無で�
 
 購入履歴の追加構成：PageControllerがホーム表示とPOST /purchasesを担当し、
 PurchaseServiceがPurchaseFormの検証とPurchaseへの変換・保存を行う。
-PurchaseRepositoryのfindAll・findById・insertでpurchasesテーブルを操作する。
+PurchaseRepositoryのsearch・findAll・findById・insertでpurchasesテーブルを操作する。
+購入登録のDBエラーはPageController.savePurchaseが捕捉し、HTTP 503で入力値とエラーをホームへ再表示する。履歴の読み込みも失敗した場合はpurchaseHistoryUnavailableで専用の案内を表示し、フォームと検証エラーを保持する。PurchaseHistoryTestsで保存失敗時のロールバック・再送信・下書き削除通知の抑止・履歴取得失敗時の表示を確認する。
 PurchaseHistoryTestsで登録・表示順・入力検証・HTMLエスケープ・収支集計の独立性を確認する。
 
 MyBatisのMapperとSQLアノテーションでDBを操作する。
 
-- TransactionRepository：search・findById・countImageReferences・insert・update・delete・lockById・saveReturn。transaction_returnsをLEFT JOINして取得し、返品費用をUPSERTする。
+- TransactionRepository：search・searchWithTag・findById・countImageReferences・insert・update・delete・lockById・saveReturn。transaction_returnsをLEFT JOINして取得し、返品費用をUPSERTする。
 - ShippingTemplateRepository：findAll・findById・insert・update・delete。一覧はID昇順、更新・削除は影響行数で存在を確認する。
-- PurchaseRepository：findAll・findById・insert。購入日降順・同日はID降順で全件を取得し、PurchaseServiceがタグと期間をJava側で絞り込む。
-- TagRepository：transactionTags・purchaseTagsでタグ列昇順に取得し、clearTransaction・clearPurchase・addTransaction・addPurchaseで置換する。売却はSQLで商品名・サイト・販売期間を絞った後、TransactionServiceがタグの完全一致をJava側で適用する。
+- PurchaseRepository：search・findAll・findById・insert。searchは購入期間とタグ候補をSQLで絞り込み、購入日降順・同日はID降順で取得する。findAllは条件なしのsearchを呼ぶ。
+- TagRepository：単一履歴のタグ取得に加え、transactionTagsByIds・purchaseTagsByIdsで検索結果の全タグを一括取得する。履歴ごとのタグ列昇順を維持し、clearTransaction・clearPurchase・addTransaction・addPurchaseで置換する。
 - MarketplaceSettingRepository：findAll・findByMarketplaceName・insert・update、getOption・insertOption・updateOption。
 - ユーザー情報用のEntity・Repository・Service・Controllerは設けない。
 - usersテーブルとuser_id列はDB互換用で、アプリのユーザー管理には使用しない。
@@ -143,6 +144,7 @@ MyBatisのMapperとSQLアノテーションでDBを操作する。
 - TagForm：共通タグ入力の分割・前後空白除去・重複除去と上限検証。購入タグ編集の入力DTOも兼ねる。
 - TagForm.parseはnull・String.isBlankを先に判定する。該当する入力は長さによらず空一覧とし、それ以外だけ分割前の1,000文字上限を検証する。画面のタグ入力欄にはmaxlength=1000を指定する。
 - TagRepository：購入・売却のタグ取得・削除・追加。各Serviceから履歴保存と同じトランザクション内で呼ぶ。
+- 一覧検索はPurchaseRepository.search・TransactionRepository.searchWithTagで期間とタグ候補を絞り込み、TagRepositoryのID一覧による一括取得とHistoryTag.groupで各履歴に全タグを割り当てる。DBの候補が0件ならSQL 1回、それ以外は2回。タグの厳密な一致はDB照合順序に依存しないようServiceでも確認する。
 - TransactionFilter.tag：売却検索・CSVのタグ条件。購入検索はPageControllerでタグ条件を受け付ける。
 - TagHistoryTests：両履歴のタグ登録・編集・解除、完全一致と複合条件、CSV、入力制限、エスケープ、削除時の連動を確認する。
 

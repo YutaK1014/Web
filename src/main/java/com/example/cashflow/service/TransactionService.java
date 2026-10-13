@@ -7,6 +7,7 @@ import com.example.cashflow.dto.TransactionFilter;
 import com.example.cashflow.repository.TransactionRepository;
 import com.example.cashflow.repository.TagRepository;
 import com.example.cashflow.dto.TagForm;
+import com.example.cashflow.dto.HistoryTag;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
@@ -35,9 +36,12 @@ public class TransactionService {
     }
 
     public List<Transaction> search(TransactionFilter filter) {
-        var rows = repository.search(filter.getKeyword(), filter.getMarketplace(), filter.start(), filter.end());
-        rows.forEach(row -> row.setTags(tags.transactionTags(row.getId())));
         String tag = filter.getTag() == null ? "" : filter.getTag().strip();
+        var rows = repository.searchWithTag(filter.getKeyword(), filter.getMarketplace(), filter.start(), filter.end(), tag);
+        if (rows.isEmpty()) return rows;
+        var groupedTags = HistoryTag.group(tags.transactionTagsByIds(rows.stream().map(Transaction::getId).toList()));
+        rows.forEach(row -> row.setTags(groupedTags.getOrDefault(row.getId(), List.of())));
+        // SQL narrows candidates; preserve exact matching even with a case-insensitive DB collation.
         return tag.isEmpty() ? rows : rows.stream().filter(row -> row.getTags().contains(tag)).toList();
     }
 
@@ -100,6 +104,8 @@ public class TransactionService {
 
     @Transactional
     public void delete(long id) {
+        // Read the photo only after any in-flight update has committed.
+        if (repository.lockById(id) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "取引が見つかりません。");
         Transaction row = get(id);
         if (repository.delete(id) == 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         afterCommitCleanup(row.getImagePath());

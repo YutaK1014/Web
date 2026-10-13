@@ -19,17 +19,96 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(properties = {
-    "spring.datasource.url=jdbc:h2:mem:tags;MODE=MySQL;DB_CLOSE_DELAY=-1",
+    "spring.datasource.url=jdbc:h2:mem:tags;MODE=MySQL;DB_CLOSE_DELAY=-1;IGNORECASE=TRUE",
     "spring.datasource.driver-class-name=org.h2.Driver",
     "spring.datasource.username=sa", "spring.datasource.password="
 })
+@org.springframework.context.annotation.Import(TagHistoryTests.QueryCountConfiguration.class)
 class TagHistoryTests {
     @Autowired WebApplicationContext context;
     @Autowired JdbcTemplate jdbc;
     @Autowired TagRepository tags;
     @Autowired PurchaseRepository purchases;
     @Autowired TransactionRepository transactions;
+    @Autowired com.example.cashflow.service.TransactionService transactionService;
+    @Autowired com.example.cashflow.service.PurchaseService purchaseService;
+    @Autowired QueryCounter queryCounter;
     MockMvc mvc;
+
+    @org.springframework.boot.test.context.TestConfiguration(proxyBeanMethods = false)
+    static class QueryCountConfiguration {
+        @org.springframework.context.annotation.Bean
+        QueryCounter queryCounter() { return new QueryCounter(); }
+    }
+
+    @org.apache.ibatis.plugin.Intercepts(@org.apache.ibatis.plugin.Signature(
+        type = org.apache.ibatis.executor.statement.StatementHandler.class, method = "prepare",
+        args = {java.sql.Connection.class, Integer.class}))
+    static class QueryCounter implements org.apache.ibatis.plugin.Interceptor {
+        int count;
+        @Override public Object intercept(org.apache.ibatis.plugin.Invocation invocation) throws Throwable {
+            count++;
+            return invocation.proceed();
+        }
+    }
+
+    @Test void historySearchQueryCountDoesNotGrowWithNumberOfRows() throws Exception {
+        var filter = new com.example.cashflow.dto.TransactionFilter();
+        queryCounter.count = 0;
+        assertTrue(transactionService.search(filter).isEmpty());
+        assertEquals(1, queryCounter.count);
+        queryCounter.count = 0;
+        assertTrue(purchaseService.all().isEmpty());
+        assertEquals(1, queryCounter.count);
+        for (int i = 0; i < 12; i++) {
+            String value = i % 2 == 0 ? "検索タグ, 別タグ" : "";
+            purchase("購入" + i, value);
+            sale("/transactions", "売却" + i, value);
+            queryCounter.count = 0;
+            var sales = transactionService.search(filter);
+            assertEquals(i + 1, sales.size());
+            assertEquals(2, queryCounter.count, "Sales should use two SQL statements regardless of row count");
+            assertEquals(i % 2 == 0 ? 2 : 0, sales.getFirst().getTags().size());
+            queryCounter.count = 0;
+            var bought = purchaseService.all();
+            assertEquals(i + 1, bought.size());
+            assertEquals(2, queryCounter.count, "Purchases should use two SQL statements regardless of row count");
+            assertEquals(i % 2 == 0 ? 2 : 0, bought.getFirst().getTags().size());
+        }
+        filter.setTag("検索タグ");
+        queryCounter.count = 0;
+        var sales = transactionService.search(filter);
+        assertEquals(6, sales.size());
+        assertEquals(2, queryCounter.count);
+        assertTrue(sales.stream().allMatch(row -> row.getTags().contains("別タグ")));
+        queryCounter.count = 0;
+        assertEquals(6, purchaseService.search("検索タグ").size());
+        assertEquals(2, queryCounter.count);
+    }
+
+    @Test void tagSearchRemainsCaseSensitiveOnCaseInsensitiveDatabase() throws Exception {
+        purchase("大文字購入", "Gift, 追加タグ");
+        purchase("小文字購入", "gift");
+        sale("/transactions", "大文字売却", "Gift, 追加タグ");
+        sale("/transactions", "小文字売却", "gift");
+        assertEquals(2, purchases.search("Gift", null, null).size(), "DB should return case-insensitive candidates");
+        assertEquals(List.of("大文字購入"), purchaseService.search("Gift").stream().map(p -> p.getItemName()).toList());
+        var filter = new com.example.cashflow.dto.TransactionFilter();
+        filter.setTag("Gift");
+        var sales = transactionService.search(filter);
+        assertEquals(1, sales.size());
+        assertEquals("大文字売却", sales.getFirst().getItemName());
+        assertTrue(sales.getFirst().getTags().contains("追加タグ"));
+    }
+
+    @Test void repositoryFiltersPurchasesByDateAndTagBeforeLoadingTags() throws Exception {
+        long selected = purchase("期間内", "対象");
+        long excluded = purchase("期間外", "対象");
+        purchase("別タグ", "対象外");
+        jdbc.update("UPDATE purchases SET purchased_date='2026-08-31' WHERE id=?", excluded);
+        var rows = purchases.search("対象", java.time.LocalDate.of(2026, 9, 1), java.time.LocalDate.of(2026, 9, 30));
+        assertEquals(List.of(selected), rows.stream().map(p -> p.getId()).toList());
+    }
 
     @BeforeEach void setup() {
         mvc = MockMvcBuilders.webAppContextSetup(context).build();

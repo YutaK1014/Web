@@ -7,6 +7,10 @@ import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface TransactionRepository {
+    default List<Transaction> search(String keyword, String marketplace, LocalDate from, LocalDate to) {
+        return searchWithTag(keyword, marketplace, from, to, "");
+    }
+
     @Select("""
         <script>
         SELECT t.*, r.return_cost FROM transactions t
@@ -15,11 +19,15 @@ public interface TransactionRepository {
         <if test="marketplace != null and marketplace != ''">AND marketplace = #{marketplace}</if>
         <if test="from != null">AND sold_date &gt;= #{from}</if>
         <if test="to != null">AND sold_date &lt;= #{to}</if>
+        <if test="tag != null and tag != ''">
+          AND EXISTS (SELECT 1 FROM transaction_tags ft WHERE ft.transaction_id=t.id AND ft.tag=#{tag})
+        </if>
         ORDER BY sold_date DESC, id DESC
         </script>
         """)
-    List<Transaction> search(@Param("keyword") String keyword, @Param("marketplace") String marketplace,
-                            @Param("from") LocalDate from, @Param("to") LocalDate to);
+    List<Transaction> searchWithTag(@Param("keyword") String keyword, @Param("marketplace") String marketplace,
+                                   @Param("from") LocalDate from, @Param("to") LocalDate to,
+                                   @Param("tag") String tag);
 
     @Select("SELECT t.*, r.return_cost FROM transactions t LEFT JOIN transaction_returns r ON r.transaction_id=t.id WHERE t.id=#{id}")
     Transaction findById(long id);
