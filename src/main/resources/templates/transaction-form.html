@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head}"></head>
-<body><main class="form-page"><nav th:replace="~{fragments :: nav}"></nav>
+<body><main class="form-page sale-form-page"><nav th:replace="~{fragments :: nav}"></nav>
 <script defer th:src="@{/js/transaction-form.js}"></script>
 <header><h1 th:text="${transactionId == null ? '取引の新規登録' : '取引の編集'}"></h1><p>売却済み商品の情報を入力してください。</p></header>
 <p class="error" role="alert" th:if="${uploadError}" th:text="${uploadError}"></p>
@@ -43,5 +43,9 @@ th:object="${form}" enctype="multipart/form-data" th:attr="data-rounding=${round
 <div class="profit-preview"><span>販売手数料（自動計算）</span><output id="selling-fee" for="sellingPrice feeRate" aria-live="polite">— 円</output>
 <span>利益（自動計算）</span><output id="profit" for="sellingPrice feeRate shippingCost purchasePrice" aria-live="polite">— 円</output><p class="hint">販売価格 − 販売手数料 − 送料 − 仕入価格</p><p id="rounding-help" class="hint"></p></div>
 <div class="form-actions"><button class="button" type="submit" th:text="${transactionId == null ? '登録する' : '更新する'}"></button><a th:href="@{/transactions}">一覧に戻る</a></div>
+<div class="sale-save-bar" id="sale-save-bar" hidden aria-label="利益の確認と保存">
+<div><span>利益（自動計算）</span><output id="mobile-profit" for="sellingPrice feeRate shippingCost purchasePrice" aria-live="off">— 円</output></div>
+<button class="button" type="submit" th:text="${transactionId == null ? '登録する' : '更新する'}"></button>
+</div>
 </form>
 </main></body></html>

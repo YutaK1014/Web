@@ -1,0 +1,97 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Transaction form browser tests</title>
+<pre id="result">RUNNING</pre>
+<script>
+(async () => {
+    const results = [];
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'width:390px;height:600px;border:0';
+    document.body.append(frame);
+    const win = frame.contentWindow;
+    const doc = win.document;
+    // Headless virtual time does not reliably advance iframe animation frames.
+    win.requestAnimationFrame = callback => win.setTimeout(callback, 0);
+    doc.body.innerHTML = `<main class="sale-form-page"><form class="transaction-form" data-rounding="DOWN">
+        <input id="itemName" required value="test">
+        <select id="marketplace"><option value="メルカリ" data-rate="10">メルカリ</option><option value="その他">その他</option></select>
+        <div id="custom-platform-field"><input id="customMarketplace"></div>
+        <input id="feeRate" type="number" min="0" max="100" step="0.01"><p id="rate-help"></p>
+        <input id="sellingPrice" type="number" min="0" required value="3000">
+        <select id="shipping-template"><option value="">none</option><option value="1" data-total="500" data-method="test" data-shipping="400" data-packaging-cost="100">template</option></select>
+        <p id="shipping-template-detail"></p>
+        <input id="shippingCost" type="number" min="0" required value="750">
+        <input id="purchasePrice" type="number" min="0" value="1000">
+        <input id="photo" type="file"><img id="photo-preview" hidden><p id="photo-error"></p>
+        <div style="height:900px"></div><textarea id="memo"></textarea>
+        <output id="selling-fee"></output><output id="profit"></output><p id="rounding-help"></p>
+        <button type="submit">更新する</button>
+        <div class="sale-save-bar" id="sale-save-bar" hidden><div><span>利益</span><output id="mobile-profit"></output></div><button class="button" type="submit">更新する</button></div>
+        </form></main>`;
+    const viewport = new win.EventTarget();
+    viewport.height = 600; viewport.offsetTop = 0;
+    Object.defineProperty(win, 'visualViewport', { value: viewport });
+    const css = doc.createElement('link');
+    css.rel = 'stylesheet'; css.href = new URL('../../main/resources/static/css/transactions.css', location.href).href;
+    const script = doc.createElement('script');
+    script.src = new URL('../../main/resources/static/js/transaction-form.js', location.href).href;
+    const settle = () => new Promise(resolve => setTimeout(resolve, 100));
+    const get = id => doc.getElementById(id);
+    const input = (id, value) => { get(id).value = value; get(id).dispatchEvent(new win.Event('input', { bubbles: true })); };
+    try {
+        await new Promise((resolve, reject) => { css.onload = resolve; css.onerror = reject; doc.head.append(css); });
+        await new Promise((resolve, reject) => { script.onload = resolve; script.onerror = reject; doc.head.append(script); });
+        await settle();
+        const bar = get('sale-save-bar');
+        for (const width of [320, 390, 768, 1024, 1280]) {
+            frame.style.width = width + 'px'; await settle();
+            assert((win.getComputedStyle(bar).display !== 'none') === (width <= 1024), 'bar visibility at ' + width);
+            if (width <= 1024) {
+                assert(doc.documentElement.scrollWidth <= width, 'horizontal overflow at ' + width);
+                assert(parseFloat(win.getComputedStyle(doc.querySelector('main')).paddingBottom) >= bar.offsetHeight, 'reserved space');
+            }
+        }
+        results.push('PASS phone/tablet/desktop layout and reserved space');
+        frame.style.width = '390px'; await settle();
+        assert(get('mobile-profit').textContent === '950円', 'initial profit');
+        input('purchasePrice', '4000');
+        assert(get('mobile-profit').textContent === '-2,050円' && get('mobile-profit').classList.contains('negative'), 'loss');
+        input('sellingPrice', '');
+        assert(get('mobile-profit').textContent === '— 円' && !get('mobile-profit').classList.contains('negative'), 'invalid input resets profit');
+        input('sellingPrice', '3000'); input('purchasePrice', '1000');
+        get('shipping-template').value = '1'; get('shipping-template').dispatchEvent(new win.Event('change'));
+        assert(get('mobile-profit').textContent === '1,200円', 'shipping template');
+        get('shippingCost').value = '750'; doc.querySelector('form').dispatchEvent(new win.Event('draftrestored'));
+        assert(get('mobile-profit').textContent === '950円', 'draft restoration');
+        assert(get('mobile-profit').textContent === get('profit').textContent, 'profit outputs agree');
+        results.push('PASS profit, loss, incomplete input, template and draft');
+        viewport.height = 350; viewport.offsetTop = 20;
+        viewport.dispatchEvent(new win.Event('resize')); await settle();
+        assert(bar.style.bottom === '230px', 'keyboard offset: ' + bar.style.bottom + ', height=' + win.innerHeight);
+        viewport.offsetTop = 40; viewport.dispatchEvent(new win.Event('scroll'));
+        assert(bar.style.bottom === '210px', 'viewport panning');
+        get('memo').focus(); await settle();
+        assert(get('memo').getBoundingClientRect().bottom <= bar.getBoundingClientRect().top, 'focused input covered');
+        viewport.height = 600; viewport.offsetTop = 0; viewport.dispatchEvent(new win.Event('resize')); await settle();
+        assert(bar.style.bottom === '0px', 'keyboard dismissal');
+        doc.documentElement.classList.add('dark');
+        assert(win.getComputedStyle(bar).backgroundColor === 'rgb(34, 56, 44)', 'dark background');
+        results.push('PASS simulated keyboard resize/panning, focused input and dark mode');
+        let submits = 0;
+        doc.querySelector('form').addEventListener('submit', event => { event.preventDefault(); submits++; });
+        input('itemName', ''); bar.querySelector('button').click();
+        assert(submits === 0 && !bar.querySelector('button').disabled, 'invalid form submitted');
+        input('itemName', 'test'); bar.querySelector('button').click();
+        assert(submits === 1, 'save shortcut did not submit');
+        const buttons = [...doc.querySelectorAll('button[type="submit"]')];
+        assert(buttons.every(button => button.disabled && button.textContent === '保存中…'), 'duplicate submission guard');
+        win.dispatchEvent(new win.Event('pageshow'));
+        assert(buttons.every(button => !button.disabled && button.textContent === '更新する'), 'back navigation restoration');
+        results.push('PASS validation, save shortcut, submit guard and back navigation');
+        document.getElementById('result').textContent = results.join('\n') + '\nALL PASSED';
+    } catch (error) {
+        document.getElementById('result').textContent = results.join('\n') + '\nFAIL ' + error.stack;
+    }
+})();
+</script>

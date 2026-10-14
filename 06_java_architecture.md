@@ -176,11 +176,13 @@ MyBatisのMapperとSQLアノテーションでDBを操作する。
 
 ## 共通画面・JavaScript・CSS
 
+- 売却登録／編集のsale-save-barは1024px以下の画面で表示する。transaction-form.jsが通常・固定バーの利益と送信ボタン状態を同期し、Visual Viewportでキーボード表示時の位置、ResizeObserverでバーの高さに応じた余白を調整する。src/test/js/transaction-form-tests.htmlで表示幅、利益計算との連動、模擬キーボードの位置補正、入力検証、送信・戻る操作を検証する。実端末のソフトウェアキーボードは別途確認する。
+- transactions.htmlの取引一覧では検索フォームと経費・件数の集計をdetailsで開閉する。検索条件の保持とエラー時の展開はThymeleafで描画し、売上・利益を常時表示する。共通summaryフラグメントを使用する他画面の集計表示は従来どおり。TransactionRegistrationTestsで折りたたみ・条件保持・集計値・CSV検索・エラー時の展開を確認する。
 - 月次レポートを除く通常画面ではfragments.htmlの共通viewport・ナビゲーション・集計部品を利用する。登録リンクは`/sales/register`、値下げ試算リンクは`/discount-simulator`。
 - transaction-form.jsは手数料・利益のプレビュー、写真プレビュー、送料テンプレート選択時の費用コピーを担当する。保存時の金額はJavaで再検証・再計算する。
 - form-draft.jsは入力・変更・送信時の保存、手動復元・削除、成功時の版一致削除、storageイベントによる保存状態の案内を担当する。transaction-form.jsはdraftrestoredイベントでテンプレート選択表示を解除し、料率・利益のプレビューを更新する。
 - monthly-reportは共通head・navを使わず、専用CSSと印刷スクリプトを読み込む。印刷CSSはA4縦・余白12mm、操作欄非表示、改ページの抑制と損失の斜線表示を指定する。
-- transactions.cssは1024px以下でメニュー3列・検索欄2列、600px以下でメニュー2列・入力欄1列へ切り替える。狭い画面のグラフは数値の下へ棒を配置し、表・カレンダーはコンテナ内で横スクロールする。
+- transactions.cssは1024px以下でメニュー3列・検索欄2列、600px以下でメニュー2列・入力欄1列へ切り替える。取引一覧は1024px以下の画面でカード、それ以外と印刷では表を表示する。カードの内訳はHTMLのdetailsで開閉し、操作リンクはtransactions.htmlのtransactionActionsフラグメントを表と共有する。狭い画面のグラフは数値の下へ棒を配置し、その他の表・カレンダーはコンテナ内で横スクロールする。
 - theme.jsはブラウザーにテーマを保存し、ダークモードにも共通のレスポンシブレイアウトを使用する。値下げ試算はJavaScriptに依存せずPOSTで計算する。
 
 ## テスト

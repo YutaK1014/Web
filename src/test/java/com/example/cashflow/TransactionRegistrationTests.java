@@ -115,6 +115,36 @@ class TransactionRegistrationTests {
             .andExpect(content().string(containsString("/transactions/"+id+"/edit")));
     }
 
+    @Test void collapsedFiltersRetainSearchAndTotalsAndOpenOnErrors() throws Exception {
+        create();
+        String initial = mvc.perform(get("/transactions")).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        assertTrue(initial.contains("id=\"transaction-filters\">"));
+        assertFalse(initial.contains("（条件指定あり）"));
+        assertTrue(initial.contains("id=\"transaction-total-details\"><summary>経費・件数の詳細</summary>"));
+
+        String filtered = mvc.perform(get("/transactions").param("keyword", "商品A"))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertTrue(filtered.contains("id=\"transaction-filters\">"));
+        assertTrue(filtered.contains("（条件指定あり）"));
+        assertTrue(filtered.contains("value=\"商品A\""));
+        String totals = filtered.substring(filtered.indexOf("class=\"transaction-totals\""),
+            filtered.indexOf("id=\"transaction-total-details\""));
+        assertTrue(totals.contains("3,000円"));
+        assertTrue(totals.contains("950円"));
+        mvc.perform(get("/transactions/export").param("keyword", "商品A"))
+            .andExpect(status().isOk()).andExpect(content().string(containsString("商品A")));
+        mvc.perform(get("/transactions").param("keyword", "該当なし"))
+            .andExpect(content().string(containsString("該当する取引はありません")));
+
+        String invalid = mvc.perform(get("/transactions").param("period", "custom")
+            .param("from", "2026-02-10").param("to", "2026-02-01"))
+            .andExpect(model().hasErrors()).andReturn().getResponse().getContentAsString();
+        assertTrue(java.util.regex.Pattern.compile("<details[^>]*id=\"transaction-filters\"[^>]*open[^>]*>")
+            .matcher(invalid).find(), "Invalid search conditions must be visible for correction");
+        assertTrue(invalid.contains("value=\"2026-02-10\""));
+    }
+
     @Test void editRecalculatesAndDeleteConfirmationDoesNotDeleteUntilPost() throws Exception {
         long id = create();
         mvc.perform(get("/transactions/"+id+"/edit")).andExpect(status().isOk()).andExpect(content().string(containsString("テストメモ")));

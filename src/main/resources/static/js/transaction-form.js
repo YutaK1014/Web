@@ -6,6 +6,8 @@
     const purchase = document.getElementById('purchasePrice');
     const rate = document.getElementById('feeRate');
     const profit = document.getElementById('profit');
+    const mobileProfit = document.getElementById('mobile-profit');
+    const profitOutputs = [profit, mobileProfit].filter(Boolean);
     const fee = document.getElementById('selling-fee');
     const platform = document.getElementById('marketplace');
     const customField = document.getElementById('custom-platform-field');
@@ -22,7 +24,11 @@
     function updateProfit() {
         const valid = price.value !== '' && shipping.value !== '' && rate.value !== '' && modes[rounding] &&
             [price, shipping, purchase, rate].every(input => input.validity.valid);
-        if (!valid) { profit.textContent = fee.textContent = '— 円'; profit.classList.remove('negative'); return; }
+        if (!valid) {
+            fee.textContent = '— 円';
+            profitOutputs.forEach(output => { output.textContent = '— 円'; output.classList.remove('negative'); });
+            return;
+        }
         // Integer arithmetic avoids floating-point rounding differences from Java BigDecimal.
         const basisPoints = Math.round(Number(rate.value) * 100);
         const numerator = Number(price.value) * basisPoints;
@@ -31,8 +37,10 @@
         if ((rounding === 'UP' && remainder > 0) || (rounding === 'HALF_UP' && remainder >= 5000)) sellingFee++;
         const amount = Number(price.value) - sellingFee - Number(shipping.value) - Number(purchase.value || 0);
         fee.textContent = sellingFee.toLocaleString('ja-JP') + '円';
-        profit.textContent = amount.toLocaleString('ja-JP') + '円';
-        profit.classList.toggle('negative', amount < 0);
+        profitOutputs.forEach(output => {
+            output.textContent = amount.toLocaleString('ja-JP') + '円';
+            output.classList.toggle('negative', amount < 0);
+        });
     }
     function updatePlatform() {
         const other = platform.value === 'その他';
@@ -78,9 +86,44 @@
         }
         photoUrl = URL.createObjectURL(file); preview.src = photoUrl; preview.hidden = false;
     });
-    const button = form.querySelector('button[type="submit"]');
-    const label = button.textContent;
-    form.addEventListener('submit', () => { button.disabled = true; button.textContent = '保存中…'; });
-    window.addEventListener('pageshow', () => { button.disabled = false; button.textContent = label; updatePlatform(); });
+    const buttons = Array.from(form.querySelectorAll('button[type="submit"]'));
+    const labels = buttons.map(button => button.textContent);
+    form.addEventListener('submit', () => {
+        buttons.forEach(button => { button.disabled = true; button.textContent = '保存中…'; });
+    });
+    window.addEventListener('pageshow', () => {
+        buttons.forEach((button, index) => { button.disabled = false; button.textContent = labels[index]; });
+        updatePlatform();
+    });
+
+    const saveBar = document.getElementById('sale-save-bar');
+    if (saveBar) {
+        const page = form.closest('main');
+        const viewport = window.visualViewport;
+        const smallScreen = window.matchMedia('(max-width: 1024px)');
+        // Reserve the actual bar height, including wrapped amounts and the safe area.
+        const reserveSpace = () => page.style.setProperty('--save-bar-height', saveBar.offsetHeight + 'px');
+        const placeBar = () => {
+            const bottom = viewport ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop) : 0;
+            saveBar.style.bottom = bottom + 'px';
+            page.style.setProperty('--save-bar-offset', bottom + 'px');
+        };
+        const revealFocusedField = () => {
+            const field = document.activeElement;
+            if (!smallScreen.matches || !form.contains(field) || !field.matches('input, select, textarea')) return;
+            const overlap = field.getBoundingClientRect().bottom - saveBar.getBoundingClientRect().top + 12;
+            if (overlap > 0) window.scrollBy(0, overlap);
+        };
+        const resize = () => requestAnimationFrame(() => { placeBar(); reserveSpace(); revealFocusedField(); });
+        saveBar.hidden = false;
+        page.classList.add('has-save-bar');
+        if (window.ResizeObserver) new ResizeObserver(reserveSpace).observe(saveBar);
+        viewport?.addEventListener('resize', resize);
+        viewport?.addEventListener('scroll', placeBar);
+        window.addEventListener('resize', resize);
+        window.addEventListener('pageshow', resize);
+        form.addEventListener('focusin', resize);
+        resize();
+    }
     updatePlatform();
 })();

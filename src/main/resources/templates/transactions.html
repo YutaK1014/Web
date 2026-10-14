@@ -5,6 +5,8 @@
 <header><h1>取引一覧</h1><a class="button" th:href="@{/sales/register}">取引を新規登録</a></header>
 <p class="success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
 <form class="filters" method="get" th:action="@{/transactions}" th:object="${filter}">
+<details class="list-disclosure" id="transaction-filters" th:open="${#fields.hasAnyErrors()}">
+<summary>検索・絞り込み <span class="hint" th:if="${not #strings.isEmpty(filter.keyword) or not #strings.isEmpty(filter.tag) or not #strings.isEmpty(filter.marketplace) or not #strings.isEmpty(filter.month) or not #strings.isEmpty(filter.period) or not #strings.isEmpty(filter.from) or not #strings.isEmpty(filter.to)}">（条件指定あり）</span></summary>
 <div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
 <div class="filter-grid">
 <label>商品名<input type="search" th:field="*{keyword}" maxlength="100"></label>
@@ -17,10 +19,50 @@
 <p class="hint">1か月以内・3か月以内は、今日からさかのぼって今日までの販売日で検索します。この場合、販売月・開始日・終了日は使いません。期間指定では開始日と終了日を入力してください（両日を含みます）。</p>
 <div class="form-actions"><button class="button" type="submit">検索・絞り込み</button><a th:href="@{/transactions}">条件をクリア</a>
 <button type="submit" th:formaction="@{/transactions/export}">CSV出力</button></div>
+</details>
 </form>
-<h2>表示中の取引の合計</h2><section th:replace="~{fragments :: summary(${summary})}"></section>
+<section aria-labelledby="transaction-totals-heading" class="transaction-totals">
+<h2 id="transaction-totals-heading">表示中の取引の合計</h2>
+<div class="summary-grid transaction-primary-totals">
+<div><span>売上</span><strong th:text="${#numbers.formatInteger(summary.sales,1,'COMMA') + '円'}"></strong></div>
+<div><span>利益</span><strong th:classappend="${summary.profit < 0} ? 'negative'" th:text="${#numbers.formatInteger(summary.profit,1,'COMMA') + '円'}"></strong></div>
+</div>
+<details class="list-disclosure" id="transaction-total-details"><summary>経費・件数の詳細</summary>
+<div class="summary-grid">
+<div><span>送料</span><strong th:text="${#numbers.formatInteger(summary.shipping,1,'COMMA') + '円'}"></strong></div>
+<div><span>販売手数料</span><strong th:text="${#numbers.formatInteger(summary.fees,1,'COMMA') + '円'}"></strong></div>
+<div><span>仕入価格</span><strong th:text="${#numbers.formatInteger(summary.purchases,1,'COMMA') + '円'}"></strong></div>
+<div><span>販売件数</span><strong th:text="${summary.count + '件'}"></strong></div>
+<div><span>返品費用</span><strong th:text="${#numbers.formatInteger(summary.returnCosts,1,'COMMA') + '円'}"></strong></div>
+<div><span>返品件数</span><strong th:text="${summary.returnCount + '件'}"></strong></div>
+</div></details></section>
 <section class="empty" th:if="${#lists.isEmpty(transactions)}"><h2>該当する取引はありません</h2><p>新規登録するか、検索条件を変更してください。</p></section>
-<div class="table-container" tabindex="0" role="region" aria-label="取引一覧" th:if="${not #lists.isEmpty(transactions)}">
+<section class="transaction-cards" aria-label="取引一覧" th:if="${not #lists.isEmpty(transactions)}">
+<p class="hint">販売日が新しい順に表示しています。</p>
+<article class="transaction-card" th:each="transaction : ${transactions}" th:attr="aria-labelledby=${'transaction-title-' + transaction.id}">
+<div class="transaction-card-heading">
+<img class="photo" th:if="${transaction.photoUrl != null}" th:src="@{${transaction.photoUrl}}" th:alt="${transaction.itemName + 'の写真'}" loading="lazy">
+<span class="no-photo" th:if="${transaction.photoUrl == null}">写真なし</span>
+<div><h2 th:id="${'transaction-title-' + transaction.id}" th:text="${transaction.itemName}"></h2>
+<span class="return-badge" th:if="${transaction.returned}">返品</span>
+<p class="hint" th:text="${transaction.platformName}"></p></div>
+</div>
+<dl class="transaction-card-summary">
+<div><dt>利益</dt><dd class="profit" th:classappend="${transaction.profit < 0} ? 'negative'" th:text="${#numbers.formatInteger(transaction.profit,1,'COMMA') + '円'}"></dd></div>
+<div><dt>販売日</dt><dd><time th:datetime="${transaction.soldDate}" th:text="${transaction.soldDate}"></time></dd></div>
+</dl>
+<div class="tag-list" th:if="${not #lists.isEmpty(transaction.tags)}"><a class="tag" th:each="label : ${transaction.tags}" th:text="${label}"
+th:href="@{/transactions(tag=${label},keyword=${filter.keyword},marketplace=${filter.marketplace},month=${filter.month},period=${filter.period},from=${filter.from},to=${filter.to})}"></a></div>
+<details class="transaction-card-details"><summary>金額の内訳</summary>
+<dl>
+<div><dt>販売価格</dt><dd th:text="${#numbers.formatInteger(transaction.recordedSales,1,'COMMA') + '円'}"></dd></div>
+<div><dt>販売手数料</dt><dd th:text="${#numbers.formatInteger(transaction.recordedFees,1,'COMMA') + '円'}"></dd></div>
+<div><dt>送料</dt><dd th:text="${#numbers.formatInteger(transaction.recordedShipping,1,'COMMA') + '円'}"></dd></div>
+<div><dt>返品費用</dt><dd th:text="${transaction.returned ? #numbers.formatInteger(transaction.returnCost,1,'COMMA') + '円' : '—'}"></dd></div>
+</dl></details>
+<div class="transaction-card-actions"><th:block th:replace="~{transactions :: transactionActions(${transaction})}"></th:block></div>
+</article></section>
+<div class="table-container transaction-table" tabindex="0" role="region" aria-label="取引一覧" th:if="${not #lists.isEmpty(transactions)}">
 <table><caption>販売日が新しい順に表示しています。</caption>
 <thead><tr><th>写真</th><th>商品名</th><th>サイト</th><th>販売価格</th><th>販売手数料</th><th>送料</th><th>返品費用</th><th>利益</th><th>販売日</th><th>操作</th></tr></thead>
 <tbody><tr th:each="transaction : ${transactions}">
@@ -35,9 +77,9 @@ th:href="@{/transactions(tag=${label},keyword=${filter.keyword},marketplace=${fi
 <td class="amount" th:text="${transaction.returned ? #numbers.formatInteger(transaction.returnCost,1,'COMMA') + '円' : '—'}"></td>
 <td class="amount profit" th:classappend="${transaction.profit < 0} ? 'negative'" th:text="${#numbers.formatInteger(transaction.profit,1,'COMMA') + '円'}"></td>
 <td class="nowrap" th:text="${transaction.soldDate}"></td>
-<td class="nowrap"><a th:unless="${transaction.returned}" th:href="@{/transactions/{id}/edit(id=${transaction.id})}">編集</a>
+<td class="nowrap"><th:block th:fragment="transactionActions(transaction)"><a th:unless="${transaction.returned}" th:href="@{/transactions/{id}/edit(id=${transaction.id})}">編集</a>
 <a th:href="@{/transactions/{id}/return(id=${transaction.id})}" th:text="${transaction.returned ? '返品費用を編集' : '返品を登録'}"></a>
-<a th:href="@{/transactions/{id}/delete(id=${transaction.id})}">削除</a></td>
+<a th:href="@{/transactions/{id}/delete(id=${transaction.id})}">削除</a></th:block></td>
 </tr></tbody></table></div>
 <p class="note">利益 = 販売価格 − 販売手数料 − 送料 − 仕入価格。仕入価格が未入力の場合は0円です。</p>
 <p class="note">返品は売上・販売件数から外し、返品費用だけを損失として元の販売日に計上します。元の取引情報は「返品費用を編集」で確認できます。</p>
