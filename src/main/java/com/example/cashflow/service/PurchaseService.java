@@ -19,10 +19,12 @@ import org.springframework.validation.Errors;
 public class PurchaseService {
     private final PurchaseRepository repository;
     private final TagRepository tags;
+    private final SubmissionService submissions;
 
-    public PurchaseService(PurchaseRepository repository, TagRepository tags) {
+    public PurchaseService(PurchaseRepository repository, TagRepository tags, SubmissionService submissions) {
         this.repository = repository;
         this.tags = tags;
+        this.submissions = submissions;
     }
 
     public List<Purchase> all() {
@@ -45,7 +47,9 @@ public class PurchaseService {
         return tag.isEmpty() ? rows : rows.stream().filter(row -> row.getTags().contains(tag)).toList();
     }
 
+    @Transactional
     public Purchase get(long id) {
+        repository.lockById(id);
         var row = repository.findById(id);
         if (row == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "購入履歴が見つかりません。");
         row.setTags(tags.purchaseTags(id));
@@ -53,9 +57,12 @@ public class PurchaseService {
     }
 
     @Transactional
-    public void updateTags(long id, String value) {
+    public void updateTags(long id, String value, Long version) {
         var parsed = TagForm.parse(value);
-        get(id);
+        var row = get(id);
+        if (version == null || version != row.getVersion())
+            throw new SaveConflictException("別の画面でタグが更新されています。入力内容を控え、最新のタグ編集画面を開き直して変更内容を確認してください。");
+        repository.incrementVersion(id);
         tags.clearPurchase(id);
         for (String tag : parsed) tags.addPurchase(id, tag);
     }
@@ -64,6 +71,7 @@ public class PurchaseService {
     public void save(PurchaseForm form, Errors errors) {
         form.validate(errors);
         if (errors.hasErrors()) return;
+        submissions.claim(form.getSubmissionId(), "purchase");
         Purchase purchase = new Purchase();
         purchase.setItemName(form.getItemName());
         purchase.setPurchasedDate(LocalDate.parse(form.getPurchasedDate()));

@@ -124,7 +124,7 @@ class TransactionReturnTests {
         mvc.perform(get("/transactions/999999/return")).andExpect(status().isNotFound());
         mvc.perform(post("/transactions/999999/return").param("returnCost", "0")).andExpect(status().isNotFound());
         mvc.perform(post("/transactions/{id}/return", id).param("returnCost", "0"));
-        mvc.perform(post("/transactions/{id}/delete", id)).andExpect(redirectedUrl("/transactions"));
+        mvc.perform(post("/transactions/{id}/delete", id).param("version", "1")).andExpect(redirectedUrl("/transactions"));
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM transaction_returns", Integer.class));
     }
 }

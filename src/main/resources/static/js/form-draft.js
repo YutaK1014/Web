@@ -36,7 +36,8 @@
         const discard = controls.querySelector('[data-draft-discard]');
         const fields = Array.from(form.elements).filter(field => field.name &&
             ['INPUT', 'SELECT', 'TEXTAREA'].includes(field.tagName) &&
-            !['hidden', 'file', 'submit', 'button', 'reset', 'password'].includes(field.type));
+            (!['hidden', 'file', 'submit', 'button', 'reset', 'password'].includes(field.type) ||
+                (field.type === 'hidden' && ['submissionId', 'version'].includes(field.name))));
         const revision = document.createElement('input');
         revision.type = 'hidden';
         revision.name = 'draftRevision';
@@ -77,6 +78,11 @@
                 const draft = read(key);
                 if (!draft) { offer(); return; }
                 fields.forEach(field => {
+                    // Never attach an old edit draft to the latest database version.
+                    if (field.name === 'version' && !Object.hasOwn(draft.values, 'version')) {
+                        field.value = '';
+                        return;
+                    }
                     if (!Object.hasOwn(draft.values, field.name)) return;
                     const value = draft.values[field.name];
                     if (field.type === 'checkbox' && typeof value === 'boolean') field.checked = value;

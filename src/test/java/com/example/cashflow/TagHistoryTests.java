@@ -119,14 +119,14 @@ class TagHistoryTests {
     }
 
     long purchase(String name, String value) throws Exception {
-        mvc.perform(post("/purchases").param("itemName", name).param("amount", "500")
+        mvc.perform(post("/purchases").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", name).param("amount", "500")
             .param("purchasedDate", "2026-09-30").param("tags", value))
             .andExpect(status().is3xxRedirection());
         return purchases.findAll().getFirst().getId();
     }
 
     void sale(String url, String name, String value) throws Exception {
-        mvc.perform(post(url).param("itemName", name).param("sellingPrice", "1000")
+        mvc.perform(post(url).param("submissionId", java.util.UUID.randomUUID().toString()).param("version", url.endsWith("/edit") ? Long.toString(transactions.findById(Long.parseLong(url.split("/")[2])).getVersion()) : "").param("itemName", name).param("sellingPrice", "1000")
             .param("shippingCost", "100").param("marketplace", "その他").param("customMarketplace", "店舗")
             .param("feeRate", "10").param("soldDate", "2026-09-30").param("tags", value))
             .andExpect(status().is3xxRedirection());
@@ -135,7 +135,7 @@ class TagHistoryTests {
     @Test void purchaseTagsCanBeAddedToExistingHistorySearchedReplacedAndRemoved() throws Exception {
         long id = purchase("購入対象", "");
         purchase("対象外購入", "衣類小物");
-        mvc.perform(post("/purchases/{id}/tags", id).param("tags", " 衣類, 衣類、プレゼント"))
+        mvc.perform(post("/purchases/{id}/tags", id).param("version", Long.toString(purchases.findById(id).getVersion())).param("tags", " 衣類, 衣類、プレゼント"))
             .andExpect(status().is3xxRedirection());
         assertEquals(2, tags.purchaseTags(id).size());
         mvc.perform(get("/purchases/{id}/tags", id)).andExpect(status().isOk())
@@ -144,10 +144,10 @@ class TagHistoryTests {
             .andExpect(content().string(containsString("購入対象")))
             .andExpect(content().string(not(containsString("対象外購入"))))
             .andExpect(content().string(containsString("タグを編集")));
-        mvc.perform(post("/purchases/{id}/tags", id).param("tags", "新しいタグ"))
+        mvc.perform(post("/purchases/{id}/tags", id).param("version", Long.toString(purchases.findById(id).getVersion())).param("tags", "新しいタグ"))
             .andExpect(status().is3xxRedirection());
         assertEquals(List.of("新しいタグ"), tags.purchaseTags(id));
-        mvc.perform(post("/purchases/{id}/tags", id).param("tags", ""))
+        mvc.perform(post("/purchases/{id}/tags", id).param("version", Long.toString(purchases.findById(id).getVersion())).param("tags", ""))
             .andExpect(status().is3xxRedirection());
         assertTrue(tags.purchaseTags(id).isEmpty());
         assertEquals(500, purchases.findById(id).getAmount());
@@ -172,13 +172,13 @@ class TagHistoryTests {
         sale("/transactions/" + id + "/edit", "売却対象", "");
         assertTrue(tags.transactionTags(id).isEmpty());
         sale("/transactions/" + id + "/edit", "売却対象", "削除対象");
-        mvc.perform(post("/transactions/{id}/delete", id)).andExpect(status().is3xxRedirection());
+        mvc.perform(post("/transactions/{id}/delete", id).param("version", "3")).andExpect(status().is3xxRedirection());
         assertTrue(tags.transactionTags(id).isEmpty());
     }
 
     @Test void invalidTagsDoNotOverwriteExistingValuesAndMissingPurchasesReturn404() throws Exception {
         long id = purchase("商品", "保存済み");
-        mvc.perform(post("/purchases/{id}/tags", id).param("tags", "a".repeat(31)))
+        mvc.perform(post("/purchases/{id}/tags", id).param("version", Long.toString(purchases.findById(id).getVersion())).param("tags", "a".repeat(31)))
             .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("tagForm", "tags"));
         assertEquals(List.of("保存済み"), tags.purchaseTags(id));
         mvc.perform(get("/purchases/999999/tags")).andExpect(status().isNotFound());

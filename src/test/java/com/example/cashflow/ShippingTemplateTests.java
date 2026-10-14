@@ -55,7 +55,7 @@ class ShippingTemplateTests {
             .andExpect(content().string(containsString("封筒＋緩衝材")));
         mvc.perform(get("/sales/register")).andExpect(status().isOk())
             .andExpect(content().string(containsString("data-total=\"260\"")));
-        mvc.perform(multipart("/transactions").param("itemName", "小物").param("sellingPrice", "1000")
+        mvc.perform(multipart("/transactions").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", "小物").param("sellingPrice", "1000")
             .param("shippingCost", "260").param("marketplace", "メルカリ").param("soldDate", "2026-10-06"))
             .andExpect(redirectedUrl("/transactions"));
         var sale = transactions.search("", "", null, null).getFirst();
@@ -96,7 +96,7 @@ class ShippingTemplateTests {
         mvc.perform(post("/settings/shipping-templates/" + id + "/edit").param("name", "変更失敗"))
             .andExpect(model().hasErrors());
         assertEquals("小物用", templates.findById(id).getName());
-        mvc.perform(multipart("/transactions").param("shippingCost", "270"))
+        mvc.perform(multipart("/transactions").param("submissionId", java.util.UUID.randomUUID().toString()).param("shippingCost", "270"))
             .andExpect(model().hasErrors()).andExpect(content().string(containsString("value=\"270\"")))
             .andExpect(content().string(containsString("data-total=\"260\"")));
     }

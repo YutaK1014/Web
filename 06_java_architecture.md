@@ -71,6 +71,16 @@ src/main/resources/
 └─ application.properties
 ```
 
+## 保存保護（2026-10-14追加）
+
+- TransactionService.delete(id, version)は親行をFOR UPDATEでロックして版を比較する。不一致・欠落はSaveConflictExceptionとし、削除SQLや画像削除を実行しない。Controllerは409とdeleteConflict属性付きのtransaction-deleteを返し、最新の確認画面へのリンクを表示する。AdversarialSaveTestsで版欠落・不正値・タグ変更・返品・再確認を、TransactionRegistrationTestsで画像更新中の古い削除要求の拒否と画像保持を検証する。
+
+- SubmissionService.claimは既存トランザクション必須（MANDATORY）でSubmissionRepositoryから登録IDをINSERTし、重複をSaveConflictExceptionに変換する。売却・購入のServiceから呼び、履歴・タグ・画像とまとめて成功またはロールバックする。
+- TransactionForm / PurchaseFormのsubmissionId、TransactionForm / TagFormのversionをフォームに埋め込む。IDの発行はGETだけで行い、POST時に欠落IDを自動発行しない。SaveConflictExceptionはControllerでHTTP 409と入力を保持した画面に変換する。
+- TransactionService.get / PurchaseService.getは親行をロックするトランザクション内で本体・版番号・タグを取得し、画面用スナップショットを揃える。保存時にも親行ロック後に版を照合する。版番号は専用テーブルに保存し、行がない場合は0。売却編集・返品保存・購入タグ編集で増分する。
+- InputText.stripSpaceはCharacter.isWhitespace / isSpaceCharで商品名の前後空白を除去する。
+- SaveProtectionTestsで同時再送、同時編集、意図的な同内容の別登録、ID欠落、検証・画像失敗後の再試行、Unicode空白を検証する。PurchaseHistoryTestsでDBエラー後の同一ID再試行を確認する。form-draft-tests.htmlで再送ID・版の復元と旧下書きの扱いを確認する。
+
 ## Controller
 
 | クラス | 担当 |

@@ -4,6 +4,7 @@ import com.example.cashflow.dto.TransactionForm;
 import com.example.cashflow.dto.ReturnForm;
 import com.example.cashflow.dto.TransactionFilter;
 import com.example.cashflow.service.TransactionService;
+import com.example.cashflow.service.SaveConflictException;
 import com.example.cashflow.service.MarketplaceService;
 import com.example.cashflow.service.ReportService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -48,14 +49,17 @@ public class TransactionController {
 
     @GetMapping("/sales/register")
     public String createForm(Model model) {
-        model.addAttribute("form", new TransactionForm());
+        var form = new TransactionForm();
+        form.setSubmissionId(java.util.UUID.randomUUID().toString());
+        model.addAttribute("form", form);
         return prepareForm(null, model);
     }
 
     @GetMapping("/transactions/{id}/edit")
     public String editForm(@PathVariable long id, Model model) {
-        if (service.get(id).isReturned()) return "redirect:/transactions/" + id + "/return";
-        model.addAttribute("form", TransactionForm.from(service.get(id)));
+        var row = service.get(id);
+        if (row.isReturned()) return "redirect:/transactions/" + id + "/return";
+        model.addAttribute("form", TransactionForm.from(row));
         return prepareForm(id, model);
     }
 
@@ -94,6 +98,9 @@ public class TransactionController {
                 redirect.addFlashAttribute("savedDraftRevision", draftRevision);
                 redirect.addFlashAttribute("successMessage", id == null ? "取引を登録しました。" : "取引を更新しました。");
                 return "redirect:/transactions";
+            } catch (SaveConflictException exception) {
+                response.setStatus(409);
+                errors.reject("conflict", exception.getMessage());
             } catch (IllegalArgumentException exception) {
                 errors.reject("invalid", exception.getMessage());
             } catch (IOException | DataAccessException exception) {
@@ -142,8 +149,16 @@ public class TransactionController {
     }
 
     @PostMapping("/transactions/{id}/delete")
-    public String delete(@PathVariable long id, RedirectAttributes redirect) {
-        service.delete(id);
+    public String delete(@PathVariable long id, @RequestParam(required = false) Long version,
+                         Model model, HttpServletResponse response, RedirectAttributes redirect) {
+        try {
+            service.delete(id, version);
+        } catch (SaveConflictException exception) {
+            response.setStatus(409);
+            model.addAttribute("transaction", service.get(id));
+            model.addAttribute("deleteConflict", exception.getMessage());
+            return "transaction-delete";
+        }
         redirect.addFlashAttribute("successMessage", "取引を削除しました。");
         return "redirect:/transactions";
     }

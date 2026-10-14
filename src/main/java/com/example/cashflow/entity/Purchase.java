@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Data
 public class Purchase {
+    private long version;
     private Long id;
     private String itemName;
     private LocalDate purchasedDate;

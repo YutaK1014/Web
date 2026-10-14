@@ -4,6 +4,7 @@
 <body><main class="form-page"><nav th:replace="~{fragments :: nav}"></nav>
 <header><h1>購入履歴のタグを編集</h1><p th:text="${purchase.itemName}"></p></header>
 <form class="transaction-form" th:action="@{/purchases/{id}/tags(id=${purchase.id})}" th:object="${tagForm}" method="post">
+<input type="hidden" th:field="*{version}">
 <div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
 <div class="field"><label for="tags">タグ<span class="optional">任意</span></label>
 <input th:field="*{tags}" maxlength="1000" placeholder="例：衣類, プレゼント" aria-describedby="tag-hint">

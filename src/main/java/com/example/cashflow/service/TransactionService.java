@@ -26,13 +26,15 @@ public class TransactionService {
     private final PhotoStorage photos;
     private final MarketplaceService marketplaces;
     private final TagRepository tags;
+    private final SubmissionService submissions;
 
     public TransactionService(TransactionRepository repository, PhotoStorage photos, MarketplaceService marketplaces,
-                              TagRepository tags) {
+                              TagRepository tags, SubmissionService submissions) {
         this.repository = repository;
         this.photos = photos;
         this.marketplaces = marketplaces;
         this.tags = tags;
+        this.submissions = submissions;
     }
 
     public List<Transaction> search(TransactionFilter filter) {
@@ -45,7 +47,9 @@ public class TransactionService {
         return tag.isEmpty() ? rows : rows.stream().filter(row -> row.getTags().contains(tag)).toList();
     }
 
+    @Transactional
     public Transaction get(long id) {
+        repository.lockById(id);
         Transaction row = repository.findById(id);
         if (row == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "取引が見つかりません。");
         row.setTags(tags.transactionTags(id));
@@ -57,9 +61,11 @@ public class TransactionService {
         var errors = new BeanPropertyBindingResult(form, "form");
         form.validate(errors);
         if (errors.hasErrors()) throw new IllegalArgumentException(errors.getAllErrors().getFirst().getDefaultMessage());
-        if (id != null) repository.lockById(id);
         Transaction row = id == null ? new Transaction() : get(id);
         if (row.isReturned()) throw new IllegalArgumentException("返品済みの取引は「返品費用を編集」から変更してください。");
+        if (id == null) submissions.claim(form.getSubmissionId(), "sale");
+        else if (form.getVersion() == null || form.getVersion() != row.getVersion())
+            throw new SaveConflictException("別の画面で取引が更新されています。入力内容を控え、最新の編集画面を開き直して変更内容を確認してください。");
         String oldPhoto = row.getImagePath();
         row.setItemName(form.getItemName());
         row.setMarketplace(form.getMarketplace());
@@ -84,6 +90,7 @@ public class TransactionService {
         try {
             if (id == null) repository.insert(row);
             else if (repository.update(row) == 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            if (id != null) repository.incrementVersion(id);
             tags.clearTransaction(row.getId());
             for (String tag : TagForm.parse(form.getTags())) tags.addTransaction(row.getId(), tag);
         } catch (RuntimeException exception) {
@@ -100,13 +107,16 @@ public class TransactionService {
         if (errors.hasErrors()) throw new IllegalArgumentException(errors.getAllErrors().getFirst().getDefaultMessage());
         if (repository.lockById(id) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "取引が見つかりません。");
         repository.saveReturn(id, Integer.parseInt(form.getReturnCost()));
+        repository.incrementVersion(id);
     }
 
     @Transactional
-    public void delete(long id) {
+    public void delete(long id, Long version) {
         // Read the photo only after any in-flight update has committed.
         if (repository.lockById(id) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "取引が見つかりません。");
         Transaction row = get(id);
+        if (version == null || version != row.getVersion())
+            throw new SaveConflictException("削除確認後に取引が更新されたか、確認情報が失われています。取引は削除していません。最新の内容を確認してから、もう一度削除してください。");
         if (repository.delete(id) == 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         afterCommitCleanup(row.getImagePath());
     }

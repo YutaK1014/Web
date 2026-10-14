@@ -63,7 +63,8 @@ class TransactionRegistrationTests {
     }
 
     MockMultipartHttpServletRequestBuilder valid(String url) {
-        var request = multipart(url);
+        var request = multipart(url).param("submissionId", java.util.UUID.randomUUID().toString());
+        if (url.endsWith("/edit")) request.param("version", Long.toString(repository.findById(Long.parseLong(url.split("/")[2])).getVersion()));
         request.param("itemName", "商品A").param("sellingPrice","3000").param("shippingCost","750")
             .param("purchasePrice","1000").param("marketplace","メルカリ").param("feeRate","99")
             .param("soldDate","2026-01-02").param("memo","テストメモ");
@@ -93,7 +94,7 @@ class TransactionRegistrationTests {
         mvc.perform(valid("/transactions/" + id + "/edit").param("draftRevision", "revision-edit"))
             .andExpect(flash().attribute("savedDraftKey", "sale-" + id))
             .andExpect(flash().attribute("savedDraftRevision", "revision-edit"));
-        var failed = mvc.perform(multipart("/transactions").param("itemName", "入力中")
+        var failed = mvc.perform(multipart("/transactions").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", "入力中")
             .param("draftRevision", "revision-failed"))
             .andExpect(view().name("transaction-form")).andReturn();
         assertFalse(failed.getFlashMap().containsKey("savedDraftKey"));
@@ -156,19 +157,19 @@ class TransactionRegistrationTests {
         assertEquals(1850,repository.findById(id).getProfit());
         mvc.perform(get("/transactions/"+id+"/delete")).andExpect(status().isOk()).andExpect(content().string(containsString("削除確認")));
         assertNotNull(repository.findById(id));
-        mvc.perform(post("/transactions/"+id+"/delete"))
+        mvc.perform(post("/transactions/"+id+"/delete").param("version", "1"))
             .andExpect(redirectedUrl("/transactions"));
         assertNull(repository.findById(id));
         mvc.perform(get("/transactions/"+id+"/edit")).andExpect(status().isNotFound());
     }
 
     @Test void validatesOtherSiteAndMissingDatesAndPreservesInput() throws Exception {
-        mvc.perform(multipart("/transactions")
+        mvc.perform(multipart("/transactions").param("submissionId", java.util.UUID.randomUUID().toString())
             .param("itemName","入力を保持").param("sellingPrice","1000").param("shippingCost","0").param("marketplace","その他"))
             .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form","soldDate","customMarketplace","feeRate"))
             .andExpect(content().string(containsString("入力を保持")));
         assertTrue(repository.search("","",null,null).isEmpty());
-        mvc.perform(multipart("/transactions")
+        mvc.perform(multipart("/transactions").param("submissionId", java.util.UUID.randomUUID().toString())
             .param("itemName","その他取引").param("sellingPrice","1000").param("shippingCost","100")
             .param("marketplace","その他").param("customMarketplace","地域フリマ").param("feeRate","5.25").param("soldDate","2026-03-01"))
             .andExpect(redirectedUrl("/transactions"));
@@ -184,10 +185,10 @@ class TransactionRegistrationTests {
         assertFalse(Files.exists(old));
         Path replacement = Path.of("target/test-photos",repository.findById(row.getId()).getImagePath().substring("/images/".length()));
         assertTrue(Files.exists(replacement));
-        service.delete(row.getId()); assertFalse(Files.exists(replacement));
+        service.delete(row.getId(), 1L); assertFalse(Files.exists(replacement));
     }
 
-    @Test void concurrentPhotoReplacementAndDeletionLeaveNoFiles() throws Exception {
+    @Test void concurrentPhotoReplacementRejectsStaleDeletionAndKeepsNewFile() throws Exception {
         mvc.perform(valid("/transactions").file(photo())).andExpect(redirectedUrl("/transactions"));
         var row = repository.search("", "", null, null).getFirst();
         Path oldPhoto = Path.of("target/test-photos", row.getImagePath().substring("/images/".length()));
@@ -217,18 +218,22 @@ class TransactionRegistrationTests {
                     repository.findById(row.getId()).getImagePath().substring("/images/".length()));
                 assertTrue(Files.exists(replacement[0]));
                 deleting.set(true);
-                deletion.set(executor.submit(() -> service.delete(row.getId())));
+                deletion.set(executor.submit(() -> service.delete(row.getId(), 0L)));
                 try { assertTrue(deletionReachedDatabase.await(5, java.util.concurrent.TimeUnit.SECONDS)); }
                 catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
                     throw new RuntimeException(exception);
                 }
             });
-            deletion.get().get(10, java.util.concurrent.TimeUnit.SECONDS);
+            var conflict = assertThrows(java.util.concurrent.ExecutionException.class,
+                () -> deletion.get().get(10, java.util.concurrent.TimeUnit.SECONDS));
+            assertInstanceOf(com.example.cashflow.service.SaveConflictException.class, conflict.getCause());
         }
-        assertNull(repository.findById(row.getId()));
+        assertNotNull(repository.findById(row.getId()));
         assertFalse(Files.exists(oldPhoto), "The replaced photo should be removed after the update commits");
-        assertFalse(Files.exists(replacement[0]), "Deletion must remove the newly committed photo too");
+        assertTrue(Files.exists(replacement[0]), "Rejected deletion must preserve the updated photo");
+        service.delete(row.getId(), 1L);
+        assertFalse(Files.exists(replacement[0]));
     }
 
     @Test void supportsLiteralKeywordDateAndPlatformFiltersAndCsvEscaping() throws Exception {
@@ -284,7 +289,7 @@ class TransactionRegistrationTests {
 
     @Test void validatesWritesWithoutTokenAndRequiresConfiguredRates() throws Exception {
         mvc.perform(post("/settings")).andExpect(status().isOk()).andExpect(model().hasErrors());
-        mvc.perform(multipart("/transactions")).andExpect(status().isOk()).andExpect(model().hasErrors());
+        mvc.perform(multipart("/transactions").param("submissionId", java.util.UUID.randomUUID().toString())).andExpect(status().isOk()).andExpect(model().hasErrors());
         mvc.perform(post("/transactions/0/edit")).andExpect(status().isNotFound());
         jdbc.update("DELETE FROM marketplace_settings");
         mvc.perform(valid("/transactions")).andExpect(status().isOk())
@@ -294,7 +299,7 @@ class TransactionRegistrationTests {
 
     @Test void rollsBackDatabaseAndNewPhotoTogether() throws Exception {
         var form = new com.example.cashflow.dto.TransactionForm();
-        form.setItemName("ロールバック確認"); form.setSellingPrice("1000"); form.setShippingCost("100");
+        form.setSubmissionId(java.util.UUID.randomUUID().toString()); form.setItemName("ロールバック確認"); form.setSellingPrice("1000"); form.setShippingCost("100");
         form.setMarketplace("メルカリ"); form.setSoldDate("2026-01-01"); form.setPhoto(photo());
         Path[] savedPhoto = new Path[1];
         new org.springframework.transaction.support.TransactionTemplate(transactionManager).executeWithoutResult(status -> {

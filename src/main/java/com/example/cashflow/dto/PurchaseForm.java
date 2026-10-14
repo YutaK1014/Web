@@ -7,6 +7,7 @@ import org.springframework.validation.Errors;
 
 @Data
 public class PurchaseForm {
+    private String submissionId = "";
     private String itemName = "";
     private String purchasedDate = LocalDate.now().toString();
     private String amount = "";
@@ -16,7 +17,7 @@ public class PurchaseForm {
 
     public void validate(Errors errors) {
         TagForm.validate(tags, errors);
-        itemName = itemName == null ? "" : itemName.strip();
+        itemName = InputText.stripSpace(itemName);
         store = store == null ? "" : store.strip();
         if (itemName.isEmpty() || itemName.length() > 100)
             errors.rejectValue("itemName", "invalid", "商品名は1〜100文字で入力してください。");

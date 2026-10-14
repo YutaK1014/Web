@@ -7,8 +7,14 @@ import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface PurchaseRepository {
-    @Select("SELECT * FROM purchases WHERE id=#{id}")
+    @Select("SELECT p.*, COALESCE(v.version, 0) AS version FROM purchases p LEFT JOIN purchase_versions v ON v.purchase_id=p.id WHERE p.id=#{id}")
     Purchase findById(long id);
+    @Select("SELECT id FROM purchases WHERE id=#{id} FOR UPDATE")
+    Long lockById(long id);
+
+    @Insert("INSERT INTO purchase_versions(purchase_id, version) VALUES(#{id}, 1) ON DUPLICATE KEY UPDATE version=version+1")
+    void incrementVersion(long id);
+
     default List<Purchase> findAll() { return search("", null, null); }
 
     @Select("""

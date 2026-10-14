@@ -29,7 +29,7 @@ public interface TransactionRepository {
                                    @Param("from") LocalDate from, @Param("to") LocalDate to,
                                    @Param("tag") String tag);
 
-    @Select("SELECT t.*, r.return_cost FROM transactions t LEFT JOIN transaction_returns r ON r.transaction_id=t.id WHERE t.id=#{id}")
+    @Select("SELECT t.*, r.return_cost, COALESCE(v.version, 0) AS version FROM transactions t LEFT JOIN transaction_returns r ON r.transaction_id=t.id LEFT JOIN transaction_versions v ON v.transaction_id=t.id WHERE t.id=#{id}")
     Transaction findById(long id);
 
     @Select("SELECT id FROM transactions WHERE id=#{id} FOR UPDATE")
@@ -60,6 +60,9 @@ public interface TransactionRepository {
           updated_at=CURRENT_TIMESTAMP WHERE id=#{id}
         """)
     int update(Transaction transaction);
+
+    @Insert("INSERT INTO transaction_versions(transaction_id, version) VALUES(#{id}, 1) ON DUPLICATE KEY UPDATE version=version+1")
+    void incrementVersion(long id);
 
     @Delete("DELETE FROM transactions WHERE id=#{id}")
     int delete(long id);

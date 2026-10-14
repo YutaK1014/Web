@@ -32,6 +32,18 @@ DBの初期化と画像ファイルの寿命は別である。アプリ起動時
 送料・梱包費および合計をアプリ側で0〜1,000,000,000円に制限する。取引との外部キーはなく、選択時の合計を既存のtransactions.shipping_costにコピーする。schema.sqlで不足テーブルを作成するため、既存取引テーブルの移行は不要。
 名前の一意制約・作成日時・更新日時は設けない。一覧はID昇順。demoの初期データにテンプレートはなく、登録分は全閲覧者で共有し、DB再起動時に初期化する。
 
+## 再送・編集競合の管理（2026-10-14追加）
+
+| テーブル | カラム・制約 | 用途 |
+| --- | --- | --- |
+| registration_submissions | submission_id VARCHAR(36) PRIMARY KEY、form_type VARCHAR(16) NOT NULL | 登録済みフォームのUUIDと種別（sale / purchase） |
+| transaction_versions | transaction_id BIGINT PRIMARY KEY / FK transactions(id) ON DELETE CASCADE、version BIGINT NOT NULL | 売却編集の版番号 |
+| purchase_versions | purchase_id BIGINT PRIMARY KEY / FK purchases(id) ON DELETE CASCADE、version BIGINT NOT NULL | 購入タグ編集の版番号 |
+
+schema.sqlで不足テーブルを自動作成する。既存テーブルのALTER・既存データの書換えは不要。版の行がない既存・新規履歴は版0として読み、更新時に1から増分する。親行をFOR UPDATEでロックし、版の確認・更新と履歴・タグ保存を同一トランザクションで行う。返品保存時も売却の版を進める。
+
+再送IDのINSERTは履歴・タグ保存と同じトランザクションに含め、一意制約で同時再送を排除する。失敗時はIDもロールバックする。登録済みIDは取引削除後も保持し、遅れた再送による再作成を防ぐ。自動期限・削除処理は設けない。demoでは他のDBデータとともに再起動時に初期化する。
+
 ## users（既存DB互換用・アプリでは未使用）
 
 既存データを維持するためテーブルは残す。ユーザー登録・認証・情報編集には使用しない。

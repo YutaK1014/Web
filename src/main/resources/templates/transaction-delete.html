@@ -5,6 +5,12 @@
 <h1>取引の削除確認</h1><p><strong th:text="${transaction.itemName}"></strong>を削除しますか？</p>
 <p>この取引と商品画像を削除します。削除後は元に戻せません。</p>
 <p>販売日：<span th:text="${transaction.soldDate}"></span> ／ 販売価格：<span th:text="${transaction.sellingPrice + '円'}"></span></p>
-<form method="post" th:action="@{/transactions/{id}/delete(id=${transaction.id})}">
+<div th:if="${deleteConflict}" class="error" role="alert">
+<p th:text="${deleteConflict}"></p>
+<a th:href="@{/transactions/{id}/delete(id=${transaction.id})}">最新の削除確認画面を開く</a>
+<a th:href="@{/transactions}">取引一覧に戻る</a>
+</div>
+<form th:unless="${deleteConflict}" method="post" th:action="@{/transactions/{id}/delete(id=${transaction.id})}">
+<input type="hidden" name="version" th:value="${transaction.version}">
 <div class="form-actions"><button class="button danger" type="submit">削除する</button><a th:href="@{/transactions}">キャンセル</a></div></form>
 </main></body></html>

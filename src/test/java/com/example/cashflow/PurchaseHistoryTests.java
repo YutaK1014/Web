@@ -36,8 +36,10 @@ class PurchaseHistoryTests {
     @Autowired org.mybatis.spring.SqlSessionTemplate sqlSession;
     @Autowired ReportService reports;
     MockMvc mvc;
+    String retrySubmission;
 
     @BeforeEach void setup() {
+        retrySubmission = java.util.UUID.randomUUID().toString();
         mvc = MockMvcBuilders.webAppContextSetup(context).build();
         jdbc.update("DELETE FROM purchases");
     }
@@ -50,12 +52,12 @@ class PurchaseHistoryTests {
     }
 
     @Test void draftCleanupRequiresSuccessfulRegistration() throws Exception {
-        mvc.perform(post("/purchases").param("itemName", "下書きの商品")
+        mvc.perform(post("/purchases").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", "下書きの商品")
             .param("purchasedDate", "2026-10-09").param("amount", "3000")
             .param("draftRevision", "purchase-revision"))
             .andExpect(flash().attribute("savedDraftKey", "purchase-new"))
             .andExpect(flash().attribute("savedDraftRevision", "purchase-revision"));
-        var failed = mvc.perform(post("/purchases").param("itemName", "入力中")
+        var failed = mvc.perform(post("/purchases").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", "入力中")
             .param("draftRevision", "failed-revision"))
             .andExpect(view().name("home")).andReturn();
         assertFalse(failed.getFlashMap().containsKey("savedDraftKey"));
@@ -64,7 +66,7 @@ class PurchaseHistoryTests {
     @Test void persistsAndDisplaysPurchasesInDateThenIdOrderWithoutChangingSales() throws Exception {
         var before = ReportService.summarize(reports.all());
         for (String date : new String[]{"2026-09-30", "2026-09-01", "2026-09-30"}) {
-            mvc.perform(post("/purchases").param("itemName", " スニーカー ")
+            mvc.perform(post("/purchases").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", " スニーカー ")
                 .param("purchasedDate", date).param("amount", "3000")
                 .param("store", " メルカリ ").param("memo", "<script>alert(1)</script>"))
                 .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/#purchase-history"))
@@ -84,10 +86,10 @@ class PurchaseHistoryTests {
     }
 
     @Test void invalidSubmissionRetainsInputAndExistingHistoryWithoutSaving() throws Exception {
-        mvc.perform(post("/purchases").param("itemName", "登録済み商品")
+        mvc.perform(post("/purchases").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", "登録済み商品")
             .param("purchasedDate", "2026-09-01").param("amount", "0"))
             .andExpect(status().is3xxRedirection());
-        mvc.perform(post("/purchases").param("itemName", "入力中の商品")
+        mvc.perform(post("/purchases").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", "入力中の商品")
             .param("purchasedDate", "2026-02-30").param("amount", "1000000001"))
             .andExpect(status().isOk()).andExpect(view().name("home"))
             .andExpect(model().attributeHasFieldErrors("purchaseForm", "purchasedDate", "amount"))
@@ -97,7 +99,7 @@ class PurchaseHistoryTests {
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder purchaseRequest() {
-        return post("/purchases").param("itemName", "再送する商品")
+        return post("/purchases").param("submissionId", retrySubmission).param("itemName", "再送する商品")
             .param("purchasedDate", "2026-10-13").param("amount", "1234")
             .param("store", "購入先").param("memo", "<b>保持するメモ</b>")
             .param("tags", "衣類, ギフト").param("draftRevision", "retry-revision");
@@ -117,7 +119,7 @@ class PurchaseHistoryTests {
     }
 
     @Test void databaseWriteFailureKeepsFormAndHistoryAndAllowsRetryWithoutDuplicates() throws Exception {
-        mvc.perform(post("/purchases").param("itemName", "登録済み商品")
+        mvc.perform(post("/purchases").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", "登録済み商品")
             .param("purchasedDate", "2026-09-01").param("amount", "0"))
             .andExpect(status().is3xxRedirection());
         var delegate = sqlSession.getMapper(TagRepository.class);
@@ -140,6 +142,7 @@ class PurchaseHistoryTests {
             .andExpect(content().string(containsString("value=\"衣類, ギフト\"")))
             .andReturn();
         assertRetainedForm(failed);
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM registration_submissions WHERE submission_id=?", Integer.class, retrySubmission));
         assertEquals(1, repository.findAll().size());
         mvc.perform(purchaseRequest()).andExpect(redirectedUrl("/#purchase-history"))
             .andExpect(flash().attribute("savedDraftKey", "purchase-new"))
@@ -169,7 +172,7 @@ class PurchaseHistoryTests {
     @Test void validationErrorsSurviveHistoryReadFailure() throws Exception {
         doThrow(new org.springframework.dao.DataAccessResourceFailureException("test read failure"))
             .when(repository).search(anyString(), any(), any());
-        mvc.perform(post("/purchases").param("itemName", "入力中の商品")
+        mvc.perform(post("/purchases").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", "入力中の商品")
             .param("purchasedDate", "2026-02-30").param("amount", "-1"))
             .andExpect(status().isServiceUnavailable()).andExpect(view().name("home"))
             .andExpect(model().attributeHasFieldErrors("purchaseForm", "purchasedDate", "amount"))

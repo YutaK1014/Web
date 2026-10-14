@@ -102,19 +102,19 @@ class DemoApplicationTests {
 
     @Test @Transactional void visitorCanCreateEditAndDeleteWithoutInitialSetup() throws Exception {
         var mvc = MockMvcBuilders.webAppContextSetup(context).build();
-        mvc.perform(post("/transactions").param("itemName", "体験用の本")
+        mvc.perform(post("/transactions").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", "体験用の本")
             .param("marketplace", "メルカリ").param("sellingPrice", "3000")
             .param("shippingCost", "210").param("purchasePrice", "500")
             .param("soldDate", "2026-10-01").param("tags", "体験"))
             .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/transactions"));
         long id = jdbc.queryForObject("SELECT id FROM transactions WHERE item_name='体験用の本'", Long.class);
         assertEquals(1990, jdbc.queryForObject("SELECT profit FROM transactions WHERE id=?", Integer.class, id));
-        mvc.perform(post("/transactions/" + id + "/edit").param("itemName", "更新した本")
+        mvc.perform(post("/transactions/" + id + "/edit").param("version", "0").param("itemName", "更新した本")
             .param("marketplace", "メルカリ").param("sellingPrice", "4000")
             .param("shippingCost", "210").param("purchasePrice", "500").param("soldDate", "2026-10-01"))
             .andExpect(status().is3xxRedirection());
         assertEquals(2890, jdbc.queryForObject("SELECT profit FROM transactions WHERE id=?", Integer.class, id));
-        mvc.perform(post("/transactions/" + id + "/delete")).andExpect(status().is3xxRedirection());
+        mvc.perform(post("/transactions/" + id + "/delete").param("version", "1")).andExpect(status().is3xxRedirection());
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM transactions WHERE id=?", Integer.class, id));
     }
 

@@ -84,3 +84,21 @@ CREATE TABLE IF NOT EXISTS purchase_tags (
     tag VARCHAR(30) NOT NULL,
     FOREIGN KEY (purchase_id) REFERENCES purchases(id) ON DELETE CASCADE
 );
+
+-- Separate tables also support existing MySQL databases without ALTER TABLE.
+CREATE TABLE IF NOT EXISTS registration_submissions (
+    submission_id VARCHAR(36) NOT NULL PRIMARY KEY,
+    form_type VARCHAR(16) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS transaction_versions (
+    transaction_id BIGINT NOT NULL PRIMARY KEY,
+    version BIGINT NOT NULL,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS purchase_versions (
+    purchase_id BIGINT NOT NULL PRIMARY KEY,
+    version BIGINT NOT NULL,
+    FOREIGN KEY (purchase_id) REFERENCES purchases(id) ON DELETE CASCADE
+);

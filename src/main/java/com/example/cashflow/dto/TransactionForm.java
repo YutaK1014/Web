@@ -12,6 +12,7 @@ import com.example.cashflow.entity.Transaction;
 @Data
 public class TransactionForm {
     public static final List<String> PLATFORMS = List.of("メルカリ", "ラクマ", "Yahoo!フリマ", "その他");
+    private String submissionId = "";
     private String itemName = "";
     private String sellingPrice = "";
     private String purchasePrice = "";
@@ -21,13 +22,14 @@ public class TransactionForm {
     private String feeRate = "";
     private String soldDate = "";
     private String memo = "";
+    private Long version;
     private String tags = "";
     private boolean removePhoto;
     private MultipartFile photo;
 
     public void validate(Errors errors) {
         TagForm.validate(tags, errors);
-        itemName = itemName == null ? "" : itemName.strip();
+        itemName = InputText.stripSpace(itemName);
         customMarketplace = customMarketplace == null ? "" : customMarketplace.strip();
         if (itemName.isEmpty() || itemName.length() > 100)
             errors.rejectValue("itemName", "invalid", "商品名は1〜100文字で入力してください。");
@@ -71,6 +73,7 @@ public class TransactionForm {
 
     public static TransactionForm from(Transaction row) {
         TransactionForm form = new TransactionForm();
+        form.setVersion(row.getVersion());
         form.setItemName(row.getItemName());
         form.setMarketplace(row.getMarketplace());
         form.setCustomMarketplace(row.getCustomMarketplace());

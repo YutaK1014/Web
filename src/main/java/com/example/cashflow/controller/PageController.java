@@ -5,6 +5,7 @@ import com.example.cashflow.dto.PurchaseForm;
 import com.example.cashflow.dto.PurchaseFilter;
 import com.example.cashflow.dto.TagForm;
 import com.example.cashflow.service.PurchaseService;
+import com.example.cashflow.service.SaveConflictException;
 import com.example.cashflow.service.MarketplaceService;
 import com.example.cashflow.service.ReportService;
 import java.time.LocalDate;
@@ -35,7 +36,9 @@ public class PageController {
                        jakarta.servlet.http.HttpServletResponse response) {
         filter.validate(errors);
         if (errors.hasErrors()) response.setStatus(400);
-        model.addAttribute("purchaseForm", new PurchaseForm());
+        var form = new PurchaseForm();
+        form.setSubmissionId(java.util.UUID.randomUUID().toString());
+        model.addAttribute("purchaseForm", form);
         model.addAttribute("tag", filter.getTag());
         model.addAttribute("purchases", errors.hasErrors() ? java.util.List.of() : purchases.search(filter));
         return "home";
@@ -48,6 +51,9 @@ public class PageController {
                                jakarta.servlet.http.HttpServletResponse response) {
         try {
             purchases.save(form, errors);
+        } catch (SaveConflictException exception) {
+            response.setStatus(409);
+            errors.reject("conflict", exception.getMessage());
         } catch (DataAccessException exception) {
             LoggerFactory.getLogger(getClass()).error("購入履歴の保存に失敗しました。", exception);
             response.setStatus(503);
@@ -76,6 +82,7 @@ public class PageController {
     public String purchaseTags(@PathVariable long id, Model model) {
         var purchase = purchases.get(id);
         var form = new TagForm();
+        form.setVersion(purchase.getVersion());
         form.setTags(String.join(", ", purchase.getTags()));
         model.addAttribute("purchase", purchase);
         model.addAttribute("tagForm", form);
@@ -85,11 +92,18 @@ public class PageController {
     @PostMapping("/purchases/{id}/tags")
     public String savePurchaseTags(@PathVariable long id,
             @ModelAttribute("tagForm") TagForm form,
-            BindingResult errors, Model model, RedirectAttributes redirect) {
+            BindingResult errors, Model model, RedirectAttributes redirect,
+            jakarta.servlet.http.HttpServletResponse response) {
         model.addAttribute("purchase", purchases.get(id));
         TagForm.validate(form.getTags(), errors);
         if (errors.hasErrors()) return "purchase-tags";
-        purchases.updateTags(id, form.getTags());
+        try {
+            purchases.updateTags(id, form.getTags(), form.getVersion());
+        } catch (SaveConflictException exception) {
+            response.setStatus(409);
+            errors.reject("conflict", exception.getMessage());
+            return "purchase-tags";
+        }
         redirect.addFlashAttribute("successMessage", "購入履歴のタグを更新しました。");
         return "redirect:/#purchase-history";
     }

@@ -7,6 +7,7 @@ import org.springframework.validation.Errors;
 
 @Data
 public class TagForm {
+    private Long version;
     private String tags = "";
 
     public static List<String> parse(String value) {

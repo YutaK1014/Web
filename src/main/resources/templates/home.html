@@ -15,6 +15,7 @@
 <p class="hint">購入履歴は売却取引と別に保存され、利益集計には反映されません。</p>
 <p th:if="${successMessage}" th:text="${successMessage}" class="success" role="status"></p>
 <form class="transaction-form" th:action="@{/purchases}" th:object="${purchaseForm}" method="post" data-draft-key="purchase-new">
+<input type="hidden" th:field="*{submissionId}">
 <section th:replace="~{fragments :: draft}"></section>
 <h3>購入したものを登録</h3>
 <div th:if="${#fields.hasErrors('*')}" class="error" role="alert"><p>購入履歴を登録できませんでした。</p>

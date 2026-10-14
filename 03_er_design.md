@@ -12,6 +12,23 @@ erDiagram
     TRANSACTIONS ||--o{ TRANSACTION_TAGS : tagged
     TRANSACTIONS ||--o| TRANSACTION_RETURNS : returned
     PURCHASES ||--o{ PURCHASE_TAGS : tagged
+    TRANSACTIONS ||--o| TRANSACTION_VERSIONS : versioned
+    PURCHASES ||--o| PURCHASE_VERSIONS : versioned
+
+    REGISTRATION_SUBMISSIONS {
+        VARCHAR submission_id PK
+        VARCHAR form_type
+    }
+
+    TRANSACTION_VERSIONS {
+        BIGINT transaction_id PK,FK
+        BIGINT version
+    }
+
+    PURCHASE_VERSIONS {
+        BIGINT purchase_id PK,FK
+        BIGINT version
+    }
 
     SHIPPING_TEMPLATES {
         BIGINT id PK

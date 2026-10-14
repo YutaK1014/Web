@@ -17,6 +17,8 @@
         <input name="itemName" required><input name="amount" required>
         <textarea name="memo"></textarea><input name="removePhoto" type="checkbox">
         <input name="photo" type="file"><input name="internal" type="hidden" value="excluded">
+        <input name="submissionId" type="hidden" value="original-submission">
+        <input name="version" type="hidden" value="0">
         </form>`;
     async function page(html, storageBlocked = false) {
         const frame = document.createElement('iframe');
@@ -68,6 +70,25 @@
             p.frame.remove();
             p = await page(markup('sale-new').replace('name="itemName" required', 'name="itemName" required value="エラー入力"'));
             assert(p.form.elements.itemName.value === 'エラー入力', 'error input overwritten');
+        });
+        await test('Restored draft keeps the original submission ID and edit version', async () => {
+            let p = await page(markup('sale-1'));
+            input(p, 'itemName', '古い編集内容');
+            p.frame.remove();
+            p = await page(markup('sale-1').replace('value="0"', 'value="3"')
+                .replace('value="original-submission"', 'value="new-submission"'));
+            assert(p.form.elements.version.value === '3', 'fresh version overwritten before restore');
+            p.doc.querySelector('[data-draft-restore]').click();
+            assert(p.form.elements.version.value === '0', 'stale draft adopted latest version');
+            assert(p.form.elements.submissionId.value === 'original-submission', 'retry got a new submission ID');
+        });
+        await test('Legacy edit draft without version cannot adopt a fresh version', async () => {
+            localStorage.setItem(prefix + 'sale-1', JSON.stringify({version: 1, revision: 'legacy',
+                savedAt: Date.now(), values: {itemName: '古い下書き'}}));
+            const p = await page(markup('sale-1').replace('value="0"', 'value="3"'));
+            p.doc.querySelector('[data-draft-restore]').click();
+            assert(p.form.elements.version.value === '', 'legacy draft adopted latest version');
+            assert(p.form.elements.itemName.value === '古い下書き', 'legacy input lost');
         });
         await test('Success clears only the matching revision and key', async () => {
             const p = await page(markup('sale-new'));

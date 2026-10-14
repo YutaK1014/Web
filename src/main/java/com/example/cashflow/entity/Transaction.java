@@ -7,6 +7,7 @@ import lombok.Data;
 
 @Data
 public class Transaction {
+    private long version;
     private long id;
     private String itemName;
     private String marketplace;
