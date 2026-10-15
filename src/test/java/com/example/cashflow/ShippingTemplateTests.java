@@ -32,7 +32,7 @@ class ShippingTemplateTests {
         mvc = MockMvcBuilders.webAppContextSetup(context).build();
         jdbc.update("DELETE FROM shipping_templates");
         jdbc.update("DELETE FROM transactions");
-        mvc.perform(post("/settings").param("mercari", "10").param("rakuma", "6")
+        mvc.perform(post("/settings").param("version", context.getBean(com.example.cashflow.service.MarketplaceService.class).settings().getVersion().toString()).param("mercari", "10").param("rakuma", "6")
             .param("yahoo", "5").param("rounding", "DOWN")).andExpect(status().is3xxRedirection());
     }
 
@@ -61,7 +61,7 @@ class ShippingTemplateTests {
         var sale = transactions.search("", "", null, null).getFirst();
         assertEquals(640, sale.getProfit());
         mvc.perform(get("/settings/shipping-templates/" + id + "/edit")).andExpect(status().isOk());
-        mvc.perform(post("/settings/shipping-templates/" + id + "/edit").param("name", "変更後")
+        mvc.perform(post("/settings/shipping-templates/" + id + "/edit").param("version", "0").param("name", "変更後")
             .param("shippingMethod", "宅配便").param("shippingCost", "750").param("packagingCost", "50"))
             .andExpect(redirectedUrl("/settings/shipping-templates"));
         assertEquals(800, templates.findById(id).getTotalCost());
@@ -70,12 +70,12 @@ class ShippingTemplateTests {
             .andExpect(content().string(containsString("data-total=\"800\"")));
         mvc.perform(get("/settings/shipping-templates/" + id + "/delete")).andExpect(status().isOk());
         assertNotNull(templates.findById(id));
-        mvc.perform(post("/settings/shipping-templates/" + id + "/delete")).andExpect(status().is3xxRedirection());
+        mvc.perform(post("/settings/shipping-templates/" + id + "/delete").param("version", "1")).andExpect(status().is3xxRedirection());
         assertTrue(templates.findAll().isEmpty());
         assertEquals(260, transactions.findById(sale.getId()).getShippingCost());
         assertEquals(640, transactions.findById(sale.getId()).getProfit());
         mvc.perform(get("/settings/shipping-templates/" + id + "/edit")).andExpect(status().isNotFound());
-        mvc.perform(post("/settings/shipping-templates/" + id + "/delete")).andExpect(status().isNotFound());
+        mvc.perform(post("/settings/shipping-templates/" + id + "/delete").param("version", "1")).andExpect(status().isNotFound());
     }
 
     @Test void rejectsInvalidAmountsAndTextWithoutLosingInput() throws Exception {
@@ -93,7 +93,7 @@ class ShippingTemplateTests {
             .andExpect(model().attributeHasFieldErrors("templateForm", "name", "shippingMethod", "packaging", "packagingCost"));
         assertTrue(templates.findAll().isEmpty());
         long id = create();
-        mvc.perform(post("/settings/shipping-templates/" + id + "/edit").param("name", "変更失敗"))
+        mvc.perform(post("/settings/shipping-templates/" + id + "/edit").param("version", "0").param("name", "変更失敗"))
             .andExpect(model().hasErrors());
         assertEquals("小物用", templates.findById(id).getName());
         mvc.perform(multipart("/transactions").param("submissionId", java.util.UUID.randomUUID().toString()).param("shippingCost", "270"))

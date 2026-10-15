@@ -17,20 +17,21 @@ class AdditionalUnexpectedUsageTests extends SaveProtectionTests {
             .param("shippingCost", cost).param("packagingCost", "0");
     }
 
-    @Test void staleSettingsOverwriteNewRatesAndGoals() throws Exception {
+    @Test void staleSettingsCannotOverwriteNewRatesAndGoals() throws Exception {
+        String version = marketplaces.settings().getVersion().toString();
         mvc.perform(get("/settings")).andExpect(status().isOk());
         mvc.perform(get("/settings")).andExpect(status().isOk());
-        mvc.perform(post("/settings").param("mercari", "20").param("rakuma", "6")
+        mvc.perform(post("/settings").param("version", version).param("mercari", "20").param("rakuma", "6")
             .param("yahoo", "5").param("rounding", "UP").param("monthlyGoal", "50000"))
             .andExpect(status().is3xxRedirection());
-        mvc.perform(post("/settings").param("mercari", "10").param("rakuma", "6")
+        mvc.perform(post("/settings").param("version", version).param("mercari", "10").param("rakuma", "6")
             .param("yahoo", "5").param("rounding", "DOWN").param("monthlyGoal", "10000"))
-            .andExpect(status().is3xxRedirection());
-        assertEquals(0, new java.math.BigDecimal("10").compareTo(marketplaces.rate("メルカリ", "")));
-        assertEquals("DOWN", marketplaces.rounding());
-        assertEquals(10000L, marketplaces.monthlyGoal());
+            .andExpect(status().isConflict());
+        assertEquals(0, new java.math.BigDecimal("20").compareTo(marketplaces.rate("メルカリ", "")));
+        assertEquals("UP", marketplaces.rounding());
+        assertEquals(50000L, marketplaces.monthlyGoal());
         mvc.perform(sale(saleId())).andExpect(status().is3xxRedirection());
-        assertEquals(300, sales.search("", "", null, null).getFirst().getSellingFee());
+        assertEquals(600, sales.search("", "", null, null).getFirst().getSellingFee());
     }
 
     @Test void replayingTemplateRegistrationCreatesDuplicates() throws Exception {
@@ -40,16 +41,16 @@ class AdditionalUnexpectedUsageTests extends SaveProtectionTests {
         assertEquals(2, jdbc.queryForObject("SELECT COUNT(*) FROM shipping_templates", Integer.class));
     }
 
-    @Test void staleTemplateEditOverwritesNewerCostAndName() throws Exception {
+    @Test void staleTemplateEditCannotOverwriteNewerCostAndName() throws Exception {
         mvc.perform(template("/settings/shipping-templates", "元の名前", "230")).andExpect(status().is3xxRedirection());
         long id = jdbc.queryForObject("SELECT id FROM shipping_templates", Long.class);
         String url = "/settings/shipping-templates/" + id + "/edit";
         mvc.perform(get(url)).andExpect(status().isOk());
         mvc.perform(get(url)).andExpect(status().isOk());
-        mvc.perform(template(url, "更新した名前", "750")).andExpect(status().is3xxRedirection());
-        mvc.perform(template(url, "元の名前", "230")).andExpect(status().is3xxRedirection());
-        assertEquals(230, jdbc.queryForObject("SELECT shipping_cost FROM shipping_templates WHERE id=?", Integer.class, id));
-        assertEquals("元の名前", jdbc.queryForObject("SELECT name FROM shipping_templates WHERE id=?", String.class, id));
+        mvc.perform(template(url, "更新した名前", "750").param("version", "0")).andExpect(status().is3xxRedirection());
+        mvc.perform(template(url, "元の名前", "230").param("version", "0")).andExpect(status().isConflict());
+        assertEquals(750, jdbc.queryForObject("SELECT shipping_cost FROM shipping_templates WHERE id=?", Integer.class, id));
+        assertEquals("更新した名前", jdbc.queryForObject("SELECT name FROM shipping_templates WHERE id=?", String.class, id));
     }
 
     @Test void nbspOnlyTemplateNameAndShippingMethodAreAccepted() throws Exception {

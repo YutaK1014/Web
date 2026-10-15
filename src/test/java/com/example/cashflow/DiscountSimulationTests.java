@@ -30,7 +30,7 @@ class DiscountSimulationTests {
 
     @BeforeEach void setup() throws Exception {
         mvc = MockMvcBuilders.webAppContextSetup(context).build();
-        mvc.perform(post("/settings").param("mercari", "10").param("rakuma", "6")
+        mvc.perform(post("/settings").param("version", context.getBean(com.example.cashflow.service.MarketplaceService.class).settings().getVersion().toString()).param("mercari", "10").param("rakuma", "6")
             .param("yahoo", "5").param("rounding", "DOWN")).andExpect(status().is3xxRedirection());
     }
 

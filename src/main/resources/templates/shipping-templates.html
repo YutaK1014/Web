@@ -8,6 +8,8 @@
 <form class="transaction-form" method="post" th:object="${templateForm}"
       th:action="${templateId == null} ? @{/settings/shipping-templates} : @{/settings/shipping-templates/{id}/edit(id=${templateId})}">
 <h2 th:text="${templateId == null ? 'テンプレートを追加' : 'テンプレートを編集'}"></h2>
+<input type="hidden" th:field="*{version}">
+<p th:if="${templateConflict}">入力内容を控えてから、<a th:href="@{/settings/shipping-templates/{id}/edit(id=${templateId})}">最新の編集画面を開く</a></p>
 <div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
 <div class="field"><label for="name">テンプレート名（必須）</label><input th:field="*{name}" maxlength="100" required placeholder="例：小物用・封筒"></div>
 <div class="field"><label for="shippingMethod">配送方法（必須）</label><input th:field="*{shippingMethod}" maxlength="100" required placeholder="例：ゆうパケット"></div>

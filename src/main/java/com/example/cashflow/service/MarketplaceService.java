@@ -41,8 +41,10 @@ public class MarketplaceService {
         return BigDecimal.valueOf(price).multiply(rate).movePointLeft(2).setScale(0, RoundingMode.valueOf(mode)).intValueExact();
     }
 
+    @Transactional
     public SettingsForm settings() {
         SettingsForm form = new SettingsForm();
+        form.setVersion(repository.lockVersion());
         Map<String, BigDecimal> rates = rates();
         form.setMercari(rates.containsKey("メルカリ") ? rates.get("メルカリ").toPlainString() : "");
         form.setRakuma(rates.containsKey("ラクマ") ? rates.get("ラクマ").toPlainString() : "");
@@ -54,11 +56,18 @@ public class MarketplaceService {
 
     @Transactional
     public void save(SettingsForm form) {
+        var errors = new org.springframework.validation.BeanPropertyBindingResult(form, "settings");
+        form.validate(errors);
+        if (errors.hasErrors()) throw new IllegalArgumentException(errors.getAllErrors().getFirst().getDefaultMessage());
+        long version = repository.lockVersion();
+        if (form.getVersion() == null || form.getVersion() != version)
+            throw new SaveConflictException("別の画面で設定が更新されたか、確認情報が失われています。設定は保存していません。入力内容を控え、最新の設定画面を開き直して確認してください。");
         saveRate("メルカリ", form.getMercari());
         saveRate("ラクマ", form.getRakuma());
         saveRate("Yahoo!フリマ", form.getYahoo());
         saveOption("fee_rounding", form.getRounding());
         saveOption("monthly_goal", form.getMonthlyGoal() == null ? "" : form.getMonthlyGoal());
+        repository.incrementVersion();
     }
 
     public Long monthlyGoal() {

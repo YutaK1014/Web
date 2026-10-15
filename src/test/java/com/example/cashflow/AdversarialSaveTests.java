@@ -66,15 +66,81 @@ class AdversarialSaveTests extends SaveProtectionTests {
         assertEquals(1, sales.findById(id).getVersion());
     }
 
-    @Test void staleReturnFormStillOverwritesNewerReturnCost() throws Exception {
+    @Test void staleReturnFormCannotOverwriteNewerReturnCost() throws Exception {
         long id = createSale();
         String url = "/transactions/" + id + "/return";
         mvc.perform(get(url)).andExpect(status().isOk()); // tab A
         mvc.perform(get(url)).andExpect(status().isOk()); // tab B
-        mvc.perform(post(url).param("returnCost", "1200")).andExpect(status().is3xxRedirection());
-        mvc.perform(post(url).param("returnCost", "100")).andExpect(status().is3xxRedirection());
+        mvc.perform(post(url).param("version", "0").param("returnCost", "1200")).andExpect(status().is3xxRedirection());
+        var rejected = mvc.perform(post(url).param("version", "0").param("returnCost", "100"))
+            .andExpect(status().isConflict()).andExpect(view().name("transaction-return"))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("最新の返品画面を開く")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("現在保存されている返品費用：1200円")))
+            .andReturn();
+        var retained = (com.example.cashflow.dto.ReturnForm) rejected.getModelAndView().getModel().get("form");
+        assertEquals("100", retained.getReturnCost());
+        assertEquals(0L, retained.getVersion());
+        assertFalse(rejected.getFlashMap().containsKey("successMessage"));
+        assertEquals(1200, sales.findById(id).getReturnCost());
+        assertEquals(-1200, sales.findById(id).getProfit());
+        var refreshed = mvc.perform(get(url)).andReturn();
+        var form = (com.example.cashflow.dto.ReturnForm) refreshed.getModelAndView().getModel().get("form");
+        assertEquals(1L, form.getVersion());
+        assertEquals("1200", form.getReturnCost());
+        mvc.perform(post(url).param("version", form.getVersion().toString()).param("returnCost", "100"))
+            .andExpect(status().is3xxRedirection());
         assertEquals(100, sales.findById(id).getReturnCost());
-        assertEquals(-100, sales.findById(id).getProfit());
+    }
+
+    @Test void simultaneousReturnFormsHaveOnlyOneWinner() throws Exception {
+        long id = createSale();
+        String url = "/transactions/" + id + "/return";
+        assertSingleWinner(
+            () -> mvc.perform(post(url).param("version", "0").param("returnCost", "1200")).andReturn().getResponse().getStatus(),
+            () -> mvc.perform(post(url).param("version", "0").param("returnCost", "100")).andReturn().getResponse().getStatus());
+        var saved = sales.findById(id);
+        assertEquals(1, saved.getVersion());
+        assertTrue(saved.getReturnCost() == 1200 || saved.getReturnCost() == 100);
+        mvc.perform(post(url).param("version", "0").param("returnCost", "0")).andExpect(status().isConflict());
+        assertEquals(saved.getReturnCost(), sales.findById(id).getReturnCost());
+    }
+
+    @Test void staleReturnAfterOrdinaryEditPreservesPriceTagsAndSaleStatus() throws Exception {
+        long id = createSale();
+        mvc.perform(get("/transactions/" + id + "/return")).andExpect(status().isOk());
+        mvc.perform(saleFields(post("/transactions/" + id + "/edit")).param("version", "0")
+            .with(req -> { req.setParameter("sellingPrice", "5000"); req.setParameter("tags", "更新タグ"); return req; }))
+            .andExpect(status().is3xxRedirection());
+        mvc.perform(post("/transactions/" + id + "/return").param("version", "0").param("returnCost", "100"))
+            .andExpect(status().isConflict());
+        assertFalse(sales.findById(id).isReturned());
+        assertEquals(5000, sales.findById(id).getSellingPrice());
+        assertEquals(java.util.List.of("更新タグ"), tags.transactionTags(id));
+    }
+
+    @Test void missingInvalidOrFutureReturnVersionsCannotSave() throws Exception {
+        long id = createSale();
+        String url = "/transactions/" + id + "/return";
+        mvc.perform(post(url).param("returnCost", "100")).andExpect(status().isConflict());
+        for (String version : new String[]{"", "-1", "1"})
+            mvc.perform(post(url).param("version", version).param("returnCost", "100")).andExpect(status().isConflict());
+        for (String version : new String[]{"abc", "0.1", "9223372036854775808"})
+            mvc.perform(post(url).param("version", version).param("returnCost", "100"))
+                .andExpect(model().attributeHasFieldErrors("form", "version"));
+        assertFalse(sales.findById(id).isReturned());
+        assertEquals(0, sales.findById(id).getVersion());
+    }
+
+    @Test void invalidReturnCostRetainsVersionForCorrection() throws Exception {
+        long id = createSale();
+        String url = "/transactions/" + id + "/return";
+        var failed = mvc.perform(post(url).param("version", "0").param("returnCost", "-1"))
+            .andExpect(model().attributeHasFieldErrors("form", "returnCost")).andReturn();
+        var form = (com.example.cashflow.dto.ReturnForm) failed.getModelAndView().getModel().get("form");
+        assertEquals(0L, form.getVersion());
+        mvc.perform(post(url).param("version", form.getVersion().toString()).param("returnCost", "0"))
+            .andExpect(status().is3xxRedirection());
+        assertEquals(0, sales.findById(id).getReturnCost());
     }
 
     @Test void staleDeleteConfirmationCannotDeleteNewerEditedRecord() throws Exception {
@@ -125,7 +191,7 @@ class AdversarialSaveTests extends SaveProtectionTests {
     @Test void returnAfterDeleteConfirmationAlsoBlocksDeletion() throws Exception {
         long id = createSale();
         mvc.perform(get("/transactions/" + id + "/delete")).andExpect(status().isOk());
-        mvc.perform(post("/transactions/" + id + "/return").param("returnCost", "1200"))
+        mvc.perform(post("/transactions/" + id + "/return").param("version", "0").param("returnCost", "1200"))
             .andExpect(status().is3xxRedirection());
         mvc.perform(post("/transactions/" + id + "/delete").param("version", "0"))
             .andExpect(status().isConflict());

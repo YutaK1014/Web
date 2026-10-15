@@ -6,6 +6,7 @@ import org.springframework.validation.Errors;
 
 @Data
 public class ShippingTemplateForm {
+    private Long version;
     private String name = "";
     private String shippingMethod = "";
     private String packaging = "";
@@ -43,6 +44,7 @@ public class ShippingTemplateForm {
 
     public static ShippingTemplateForm from(ShippingTemplate row) {
         var form = new ShippingTemplateForm();
+        form.setVersion(row.getVersion());
         form.setName(row.getName()); form.setShippingMethod(row.getShippingMethod()); form.setPackaging(row.getPackaging());
         form.setShippingCost(Integer.toString(row.getShippingCost())); form.setPackagingCost(Integer.toString(row.getPackagingCost()));
         return form;

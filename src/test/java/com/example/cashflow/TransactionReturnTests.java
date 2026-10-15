@@ -55,7 +55,7 @@ class TransactionReturnTests {
         mvc.perform(get("/transactions/{id}/return", id)).andExpect(status().isOk())
             .andExpect(content().string(containsString("返品商品&lt;script&gt;")));
         assertFalse(repository.findById(id).isReturned());
-        mvc.perform(post("/transactions/{id}/return", id).param("returnCost", "1200"))
+        mvc.perform(post("/transactions/{id}/return", id).param("version", Long.toString(repository.findById(id).getVersion())).param("returnCost", "1200"))
             .andExpect(redirectedUrl("/transactions"));
         var row = service.get(id);
         assertTrue(row.isReturned()); assertEquals(-1200, row.getProfit());
@@ -78,24 +78,24 @@ class TransactionReturnTests {
 
     @Test void replacesCostIncludingZeroAndRejectsInvalidAmountsWithoutChangingSavedCost() throws Exception {
         for (String value : new String[]{"1000000000", "1000000000", "0"}) {
-            mvc.perform(post("/transactions/{id}/return", id).param("returnCost", value))
+            mvc.perform(post("/transactions/{id}/return", id).param("version", Long.toString(repository.findById(id).getVersion())).param("returnCost", value))
                 .andExpect(redirectedUrl("/transactions"));
             assertEquals(-Long.parseLong(value), repository.findById(id).getProfit());
         }
         assertTrue(repository.findById(id).isReturned());
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM transaction_returns", Integer.class));
         for (String value : new String[]{"", "-1", "1.5", "1000000001", "999999999999999999999999", "abc", "１", " "}) {
-            mvc.perform(post("/transactions/{id}/return", id).param("returnCost", value))
+            mvc.perform(post("/transactions/{id}/return", id).param("version", Long.toString(repository.findById(id).getVersion())).param("returnCost", value))
                 .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("form", "returnCost"));
             assertEquals(0, repository.findById(id).getReturnCost());
         }
-        mvc.perform(post("/transactions/{id}/return", id)).andExpect(model().attributeHasFieldErrors("form", "returnCost"));
+        mvc.perform(post("/transactions/{id}/return", id).param("version", Long.toString(repository.findById(id).getVersion()))).andExpect(model().attributeHasFieldErrors("form", "returnCost"));
         var invalid = new ReturnForm(); invalid.setReturnCost("-1");
         assertThrows(IllegalArgumentException.class, () -> service.saveReturn(id, invalid));
     }
 
     @Test void aggregatesReturnsWithoutDoubleCountingAndShowsReturnOnlyCalendarDay() throws Exception {
-        mvc.perform(post("/transactions/{id}/return", id).param("returnCost", "1200"));
+        mvc.perform(post("/transactions/{id}/return", id).param("version", Long.toString(repository.findById(id).getVersion())).param("returnCost", "1200"));
         var rows = reports.all();
         var summary = ReportService.summarize(rows);
         assertEquals(0, summary.sales()); assertEquals(0, summary.fees());
@@ -123,7 +123,7 @@ class TransactionReturnTests {
     @Test void nonexistentTransactionsAre404AndExplicitDeletionCascadesReturn() throws Exception {
         mvc.perform(get("/transactions/999999/return")).andExpect(status().isNotFound());
         mvc.perform(post("/transactions/999999/return").param("returnCost", "0")).andExpect(status().isNotFound());
-        mvc.perform(post("/transactions/{id}/return", id).param("returnCost", "0"));
+        mvc.perform(post("/transactions/{id}/return", id).param("version", Long.toString(repository.findById(id).getVersion())).param("returnCost", "0"));
         mvc.perform(post("/transactions/{id}/delete", id).param("version", "1")).andExpect(redirectedUrl("/transactions"));
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM transaction_returns", Integer.class));
     }

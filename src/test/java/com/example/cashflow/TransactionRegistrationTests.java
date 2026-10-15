@@ -49,7 +49,7 @@ class TransactionRegistrationTests {
         jdbc.update("DELETE FROM app_settings");
         SettingsForm settings = new SettingsForm();
         settings.setMercari("10"); settings.setRakuma("6"); settings.setYahoo("5"); settings.setRounding("DOWN");
-        marketplaces.save(settings);
+        settings.setVersion(marketplaces.settings().getVersion()); marketplaces.save(settings);
     }
 
     @Test void registrationFormOpensWithoutLoginOrToken() throws Exception {
@@ -277,7 +277,7 @@ class TransactionRegistrationTests {
         for (String url : List.of("/","/dashboard","/reports?year=2026","/settings","/transactions")) {
             mvc.perform(get(url)).andExpect(status().isOk());
         }
-        mvc.perform(post("/settings")
+        mvc.perform(post("/settings").param("version", context.getBean(com.example.cashflow.service.MarketplaceService.class).settings().getVersion().toString())
             .param("mercari","20").param("rakuma","6").param("yahoo","5").param("rounding","HALF_UP").param("monthlyGoal","10000"))
             .andExpect(redirectedUrl("/settings"));
         assertEquals(300,repository.findById(id).getSellingFee());
@@ -288,7 +288,7 @@ class TransactionRegistrationTests {
     }
 
     @Test void validatesWritesWithoutTokenAndRequiresConfiguredRates() throws Exception {
-        mvc.perform(post("/settings")).andExpect(status().isOk()).andExpect(model().hasErrors());
+        mvc.perform(post("/settings").param("version", context.getBean(com.example.cashflow.service.MarketplaceService.class).settings().getVersion().toString())).andExpect(status().isOk()).andExpect(model().hasErrors());
         mvc.perform(multipart("/transactions").param("submissionId", java.util.UUID.randomUUID().toString())).andExpect(status().isOk()).andExpect(model().hasErrors());
         mvc.perform(post("/transactions/0/edit")).andExpect(status().isNotFound());
         jdbc.update("DELETE FROM marketplace_settings");

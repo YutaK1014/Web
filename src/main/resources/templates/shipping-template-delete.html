@@ -5,6 +5,12 @@
 <h1>テンプレートの削除確認</h1>
 <p>「<strong th:text="${template.name}"></strong>」を削除しますか？</p>
 <p>登録済み取引の金額は変わりません。</p>
-<form method="post" th:action="@{/settings/shipping-templates/{id}/delete(id=${template.id})}">
+<div th:if="${deleteConflict}" class="error" role="alert">
+<p th:text="${deleteConflict}"></p>
+<a th:href="@{/settings/shipping-templates/{id}/delete(id=${template.id})}">最新の削除確認画面を開く</a>
+<a th:href="@{/settings/shipping-templates}">一覧に戻る</a>
+</div>
+<form th:unless="${deleteConflict}" method="post" th:action="@{/settings/shipping-templates/{id}/delete(id=${template.id})}">
+<input type="hidden" name="version" th:value="${template.version}">
 <div class="form-actions"><button class="button" type="submit">削除する</button><a th:href="@{/settings/shipping-templates}">キャンセル</a></div>
 </form></main></body></html>

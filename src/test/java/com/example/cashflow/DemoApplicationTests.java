@@ -77,7 +77,7 @@ class DemoApplicationTests {
                 .header("X-Forwarded-Host", "demo.example.test")
                 .header("X-Forwarded-Port", "443")
                 .POST(HttpRequest.BodyPublishers.ofString(
-                    "mercari=10&rakuma=10&yahoo=5&rounding=DOWN&monthlyGoal=10000"))
+                    "mercari=10&rakuma=10&yahoo=5&rounding=DOWN&monthlyGoal=10000&version=" + context.getBean(com.example.cashflow.service.MarketplaceService.class).settings().getVersion()))
                 .build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(302, response.statusCode());

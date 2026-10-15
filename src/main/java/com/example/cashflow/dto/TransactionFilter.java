@@ -13,6 +13,19 @@ public class TransactionFilter extends DateRangeFilter {
     private String month = "";
 
     public void validate(Errors errors) {
+        // Field-marker parameters can bind String properties to null.
+        if (month == null) {
+            errors.rejectValue("month", "invalid", "販売月を指定し直してください。");
+            month = "";
+        }
+        if (marketplace == null) {
+            errors.rejectValue("marketplace", "invalid", "フリマサイトを選び直してください。");
+            marketplace = "";
+        }
+        if (keyword == null) {
+            errors.rejectValue("keyword", "invalid", "検索語を入力し直してください。");
+            keyword = "";
+        }
         super.validate(errors);
         tag = tag == null ? "" : tag.strip();
         if (tag.length() > 30) errors.rejectValue("tag", "invalid", "検索タグは30文字以内で入力してください。");

@@ -7,6 +7,12 @@ import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface MarketplaceSettingRepository {
+    @Select("SELECT version FROM settings_version WHERE id=1 FOR UPDATE")
+    long lockVersion();
+
+    @Update("UPDATE settings_version SET version=version+1 WHERE id=1")
+    void incrementVersion();
+
     @Select("SELECT id, marketplace_name, fee_rate FROM marketplace_settings ORDER BY id")
     List<MarketplaceSetting> findAll();
 

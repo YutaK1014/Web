@@ -106,6 +106,9 @@ public class TransactionService {
         form.validate(errors);
         if (errors.hasErrors()) throw new IllegalArgumentException(errors.getAllErrors().getFirst().getDefaultMessage());
         if (repository.lockById(id) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "取引が見つかりません。");
+        Transaction row = get(id);
+        if (form.getVersion() == null || form.getVersion() != row.getVersion())
+            throw new SaveConflictException("別の画面で取引または返品費用が更新されたか、確認情報が失われています。入力内容を控え、最新の返品画面を開き直して確認してください。返品費用は保存していません。");
         repository.saveReturn(id, Integer.parseInt(form.getReturnCost()));
         repository.incrementVersion(id);
     }

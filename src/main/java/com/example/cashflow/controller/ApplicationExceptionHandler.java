@@ -9,6 +9,13 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @ControllerAdvice
 public class ApplicationExceptionHandler {
+    @ExceptionHandler(org.springframework.beans.InvalidPropertyException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String invalidField(Model model) {
+        model.addAttribute("message", "入力項目の形式が正しくありません。画面を開き直して入力してください。");
+        return "error";
+    }
+
     @ExceptionHandler(DataAccessException.class)
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public String databaseFailure(DataAccessException exception, Model model) {

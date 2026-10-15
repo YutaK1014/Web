@@ -37,7 +37,7 @@ class UnexpectedUsageTests {
         jdbc.update("DELETE FROM purchases");
         var settings = new SettingsForm();
         settings.setMercari("10"); settings.setRakuma("6"); settings.setYahoo("5");
-        settings.setRounding("DOWN"); marketplaces.save(settings);
+        settings.setRounding("DOWN"); settings.setVersion(marketplaces.settings().getVersion()); marketplaces.save(settings);
     }
 
     MockMultipartHttpServletRequestBuilder sale(String url, String name, String price) {
@@ -87,7 +87,7 @@ class UnexpectedUsageTests {
         long id = create();
         String url = "/transactions/" + id + "/edit";
         mvc.perform(get(url)).andExpect(status().isOk());
-        mvc.perform(post("/settings").param("mercari", "20").param("rakuma", "6")
+        mvc.perform(post("/settings").param("version", context.getBean(com.example.cashflow.service.MarketplaceService.class).settings().getVersion().toString()).param("mercari", "20").param("rakuma", "6")
             .param("yahoo", "5").param("rounding", "DOWN")).andExpect(status().is3xxRedirection());
         mvc.perform(sale(url, "original", "3000").param("feeRate", "10"))
             .andExpect(status().is3xxRedirection());
@@ -97,7 +97,7 @@ class UnexpectedUsageTests {
 
     @Test void staleEditAfterReturnCannotRestoreSale() throws Exception {
         long id = create();
-        mvc.perform(post("/transactions/" + id + "/return").param("returnCost", "500"))
+        mvc.perform(post("/transactions/" + id + "/return").param("version", "0").param("returnCost", "500"))
             .andExpect(status().is3xxRedirection());
         mvc.perform(sale("/transactions/" + id + "/edit", "stale", "4000"))
             .andExpect(status().isOk()).andExpect(model().hasErrors());

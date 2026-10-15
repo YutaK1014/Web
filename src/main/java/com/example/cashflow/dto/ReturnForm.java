@@ -5,6 +5,7 @@ import org.springframework.validation.Errors;
 
 @Data
 public class ReturnForm {
+    private Long version;
     private String returnCost = "";
 
     public void validate(Errors errors) {

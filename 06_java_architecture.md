@@ -73,6 +73,14 @@ src/main/resources/
 
 ## 保存保護（2026-10-14追加）
 
+- 2026-10-15：ShippingTemplateForm / ShippingTemplateにversionを追加する。Repositoryはshipping_template_versionsをLEFT JOINし、行がなければ0で返す。ShippingTemplateService.save/deleteは@Transactionalで親行ロック・版照合を行い、競合をSaveConflictExceptionとする。TemplateConflictTestsで同時編集、編集と削除の競合、版欠落・不正、入力保持、再確認・ロールバックを検証する。
+- UploadExceptionHandlerは解析不能な本文やRefererを参照せず、requestURIからcontextPathを除いた送信先を照合する。既知の編集URLは同じ編集、新規POSTは登録画面へリダイレクトする。それ以外の容量超過は413とする。HttpEdgeCaseTestsでファイル上限・全体上限・編集画面の復元案内・contextPath・外部Refererの無視を検証する。
+- TransactionFilterはnullのmonth / marketplace / keywordを入力エラーとして記録して正規化する。SettingsFormはnullのroundingを入力エラーとする。ApplicationExceptionHandlerはInvalidPropertyExceptionを400の共通エラー画面へ変換する。NullPointerException等を一括捕捉して隠す処理は追加しない。
+
+- 2026-10-15：SettingsForm.versionを設定画面に埋め込む。MarketplaceService.settings/saveは@TransactionalでMarketplaceSettingRepository.lockVersionを使用し、設定全体の版を照合する。保存成功時のみincrementVersionする。PageControllerはSaveConflictExceptionを409とsettingsConflict属性に変換する。SettingsConflictTestsで初回・通常の同時保存、入力保持、欠落・不正版、入力訂正、ロールバック、schema再実行時の版保持を確認する。
+
+- 2026-10-15：ReturnForm.versionをGETで設定しhiddenでPOSTへ渡す。TransactionService.saveReturnは親行ロック後に版を照合し、不一致・欠落をSaveConflictExceptionとする。Controllerは409とreturnConflict属性を返し、入力金額・送信版を保持する。AdversarialSaveTestsで同時保存・古い返品画面・通常編集後の返品・不正版・入力訂正を検証する。
+
 - TransactionService.delete(id, version)は親行をFOR UPDATEでロックして版を比較する。不一致・欠落はSaveConflictExceptionとし、削除SQLや画像削除を実行しない。Controllerは409とdeleteConflict属性付きのtransaction-deleteを返し、最新の確認画面へのリンクを表示する。AdversarialSaveTestsで版欠落・不正値・タグ変更・返品・再確認を、TransactionRegistrationTestsで画像更新中の古い削除要求の拒否と画像保持を検証する。
 
 - SubmissionService.claimは既存トランザクション必須（MANDATORY）でSubmissionRepositoryから登録IDをINSERTし、重複をSaveConflictExceptionに変換する。売却・購入のServiceから呼び、履歴・タグ・画像とまとめて成功またはロールバックする。
@@ -91,7 +99,7 @@ src/main/resources/
 | DiscountController | 値下げシミュレーションの入力・計算結果・入力エラー表示 |
 | HealthController | GET /healthz。DB疎通成功時200 / UP、失敗時503 / DOWNのJSON応答 |
 | ApplicationExceptionHandler | DB障害・URLパラメーターの型不正に対するエラー表示 |
-| UploadExceptionHandler | アップロード容量超過時の案内と登録画面へのリダイレクト |
+| UploadExceptionHandler | アップロード容量超過時の案内と送信元の登録／編集画面へのリダイレクト |
 
 ## Service・Entity
 

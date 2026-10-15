@@ -8,6 +8,15 @@ MySQLの個人利用とH2のdemo構成で共通の論理構造を使用する。
 
 ```mermaid
 erDiagram
+    SHIPPING_TEMPLATES ||--o| SHIPPING_TEMPLATE_VERSIONS : versioned
+    SHIPPING_TEMPLATE_VERSIONS {
+        BIGINT template_id PK,FK
+        BIGINT version
+    }
+    SETTINGS_VERSION {
+        INT id PK
+        BIGINT version
+    }
     USERS |o--o{ TRANSACTIONS : legacy_reference
     TRANSACTIONS ||--o{ TRANSACTION_TAGS : tagged
     TRANSACTIONS ||--o| TRANSACTION_RETURNS : returned

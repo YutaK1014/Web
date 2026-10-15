@@ -34,6 +34,10 @@ DBの初期化と画像ファイルの寿命は別である。アプリ起動時
 
 ## 再送・編集競合の管理（2026-10-14追加）
 
+2026-10-15：shipping_template_versions（template_id BIGINT PRIMARY KEY / FK shipping_templates(id) ON DELETE CASCADE、version BIGINT NOT NULL）を追加する。行のない既存・新規テンプレートは版0として取得し、編集成功時に増分する。編集・削除は親行をFOR UPDATEでロックして版を照合し、編集本体と版の更新を同じトランザクションで行う。既存テーブルのALTER・既存データの書換えは不要。
+
+2026-10-15：設定全体の版管理にsettings_version（id INT PRIMARY KEY、version BIGINT NOT NULL）を追加する。id=1の単一行をschema.sqlで版0として初期化する。既存行は再起動時も版を保持する。既存の料率・設定値は変更しない。設定画面の取得・保存でこの行をFOR UPDATEし、初回設定を含めた競合を検知する。設定の全項目と版の更新を同一トランザクションで行う。
+
 | テーブル | カラム・制約 | 用途 |
 | --- | --- | --- |
 | registration_submissions | submission_id VARCHAR(36) PRIMARY KEY、form_type VARCHAR(16) NOT NULL | 登録済みフォームのUUIDと種別（sale / purchase） |

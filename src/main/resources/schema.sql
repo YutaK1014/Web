@@ -102,3 +102,17 @@ CREATE TABLE IF NOT EXISTS purchase_versions (
     version BIGINT NOT NULL,
     FOREIGN KEY (purchase_id) REFERENCES purchases(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS settings_version (
+    id INT NOT NULL PRIMARY KEY,
+    version BIGINT NOT NULL
+);
+-- Keep the version across restarts; the single row also serializes initial saves.
+INSERT INTO settings_version(id, version) VALUES(1, 0)
+ON DUPLICATE KEY UPDATE id=1;
+
+CREATE TABLE IF NOT EXISTS shipping_template_versions (
+    template_id BIGINT NOT NULL PRIMARY KEY,
+    version BIGINT NOT NULL,
+    FOREIGN KEY (template_id) REFERENCES shipping_templates(id) ON DELETE CASCADE
+);

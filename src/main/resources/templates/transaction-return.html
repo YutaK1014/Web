@@ -9,7 +9,12 @@
 <p>取引を削除せず、返品として残します。元の売上・手数料・送料・仕入価格は集計から外し、返品費用だけを損失として計上します。</p>
 <p class="hint">集計・検索の日付は元の販売日です。</p>
 <form method="post" th:action="@{/transactions/{id}/return(id=${transaction.id})}" th:object="${form}">
+<input type="hidden" th:field="*{version}">
 <div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
+<div th:if="${returnConflict}">
+<p th:if="${transaction.returned}" th:text="${'現在保存されている返品費用：' + transaction.returnCost + '円'}"></p>
+<a th:href="@{/transactions/{id}/return(id=${transaction.id})}">最新の返品画面を開く</a>
+</div>
 <div class="field"><label for="returnCost">返品にかかった費用の合計（円） <span class="required">必須</span></label>
 <input type="number" th:field="*{returnCost}" min="0" max="1000000000" step="1" required aria-describedby="return-cost-help">
 <p class="hint" id="return-cost-help">返送料、返金されなかった発送送料・手数料など、実際に負担した費用をすべて含めてください。費用がなければ0円を入力してください。保存し直すと合計額を置き換えます。</p></div>

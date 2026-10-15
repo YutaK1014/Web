@@ -175,10 +175,18 @@ public class PageController {
     }
 
     @PostMapping("/settings")
-    public String saveSettings(@ModelAttribute("settings") SettingsForm form, BindingResult errors, RedirectAttributes redirect) {
+    public String saveSettings(@ModelAttribute("settings") SettingsForm form, BindingResult errors, RedirectAttributes redirect,
+                               Model model, jakarta.servlet.http.HttpServletResponse response) {
         form.validate(errors);
         if (errors.hasErrors()) return "settings";
-        marketplaces.save(form);
+        try {
+            marketplaces.save(form);
+        } catch (SaveConflictException exception) {
+            response.setStatus(409);
+            errors.reject("conflict", exception.getMessage());
+            model.addAttribute("settingsConflict", true);
+            return "settings";
+        }
         redirect.addFlashAttribute("successMessage", "設定を保存しました。保存済みの取引の金額は変更していません。");
         return "redirect:/settings";
     }

@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class ShippingTemplate {
+    private long version;
     private Long id;
     private String name;
     private String shippingMethod;

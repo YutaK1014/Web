@@ -43,7 +43,7 @@ class SaveProtectionTests {
         jdbc.update("DELETE FROM registration_submissions");
         var settings = new SettingsForm();
         settings.setMercari("10"); settings.setRakuma("6"); settings.setYahoo("5");
-        settings.setRounding("DOWN"); marketplaces.save(settings);
+        settings.setRounding("DOWN"); settings.setVersion(marketplaces.settings().getVersion()); marketplaces.save(settings);
     }
 
     String saleId() throws Exception {

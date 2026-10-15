@@ -116,6 +116,7 @@ public class TransactionController {
     public String returnForm(@PathVariable long id, Model model) {
         var row = service.get(id);
         var form = new ReturnForm();
+        form.setVersion(row.getVersion());
         if (row.isReturned()) form.setReturnCost(row.getReturnCost().toString());
         model.addAttribute("form", form);
         model.addAttribute("transaction", row);
@@ -133,6 +134,11 @@ public class TransactionController {
                 service.saveReturn(id, form);
                 redirect.addFlashAttribute("successMessage", "返品費用を保存しました。取引は返品として残しています。");
                 return "redirect:/transactions";
+            } catch (SaveConflictException exception) {
+                response.setStatus(409);
+                errors.reject("conflict", exception.getMessage());
+                model.addAttribute("returnConflict", true);
+                model.addAttribute("transaction", service.get(id));
             } catch (DataAccessException exception) {
                 LoggerFactory.getLogger(getClass()).error("返品費用の保存に失敗しました。", exception);
                 response.setStatus(503);
