@@ -73,6 +73,8 @@
         assert(bar.style.bottom === '210px', 'viewport panning');
         get('memo').focus(); await settle();
         assert(get('memo').getBoundingClientRect().bottom <= bar.getBoundingClientRect().top, 'focused input covered');
+        viewport.offsetTop = 20; viewport.dispatchEvent(new win.Event('scroll')); await settle();
+        assert(get('memo').getBoundingClientRect().bottom <= bar.getBoundingClientRect().top, 'panning covered the focused input');
         viewport.height = 600; viewport.offsetTop = 0; viewport.dispatchEvent(new win.Event('resize')); await settle();
         assert(bar.style.bottom === '0px', 'keyboard dismissal');
         doc.documentElement.classList.add('dark');

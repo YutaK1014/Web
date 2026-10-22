@@ -114,12 +114,17 @@
             const overlap = field.getBoundingClientRect().bottom - saveBar.getBoundingClientRect().top + 12;
             if (overlap > 0) window.scrollBy(0, overlap);
         };
-        const resize = () => requestAnimationFrame(() => { placeBar(); reserveSpace(); revealFocusedField(); });
+        const resize = () => requestAnimationFrame(() => {
+            placeBar();
+            reserveSpace();
+            // Let layout and the browser's focus scrolling settle before correcting overlap.
+            requestAnimationFrame(revealFocusedField);
+        });
         saveBar.hidden = false;
         page.classList.add('has-save-bar');
         if (window.ResizeObserver) new ResizeObserver(reserveSpace).observe(saveBar);
         viewport?.addEventListener('resize', resize);
-        viewport?.addEventListener('scroll', placeBar);
+        viewport?.addEventListener('scroll', () => { placeBar(); resize(); });
         window.addEventListener('resize', resize);
         window.addEventListener('pageshow', resize);
         form.addEventListener('focusin', resize);
