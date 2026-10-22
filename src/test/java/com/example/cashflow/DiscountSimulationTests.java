@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.hamcrest.Matchers.containsString;
@@ -29,7 +28,7 @@ class DiscountSimulationTests {
     MockMvc mvc;
 
     @BeforeEach void setup() throws Exception {
-        mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mvc = CsrfTestSupport.mvc(context);
         mvc.perform(post("/settings").param("version", context.getBean(com.example.cashflow.service.MarketplaceService.class).settings().getVersion().toString()).param("mercari", "10").param("rakuma", "6")
             .param("yahoo", "5").param("rounding", "DOWN")).andExpect(status().is3xxRedirection());
     }

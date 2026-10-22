@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.hamcrest.Matchers.containsString;
@@ -32,7 +31,7 @@ class MonthlyReportTests {
     MockMvc mvc;
 
     @BeforeEach void setup() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mvc = CsrfTestSupport.mvc(context);
         jdbc.update("DELETE FROM transactions");
     }
 

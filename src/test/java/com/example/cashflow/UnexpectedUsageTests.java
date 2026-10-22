@@ -11,7 +11,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -32,7 +31,7 @@ class UnexpectedUsageTests {
     MockMvc mvc;
 
     @BeforeEach void setup() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mvc = CsrfTestSupport.mvc(context);
         jdbc.update("DELETE FROM transactions");
         jdbc.update("DELETE FROM purchases");
         var settings = new SettingsForm();

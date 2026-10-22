@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.context.WebApplicationContext;
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,7 +39,7 @@ class PurchaseHistoryTests {
 
     @BeforeEach void setup() {
         retrySubmission = java.util.UUID.randomUUID().toString();
-        mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mvc = CsrfTestSupport.mvc(context);
         jdbc.update("DELETE FROM purchases");
     }
 

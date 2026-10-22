@@ -22,7 +22,14 @@ class HttpEdgeCaseTests extends SaveProtectionTests {
     @Value("${local.server.port}") int port;
 
     HttpResponse<String> send(String method, String path, String type, byte[] body) throws Exception {
-        try (var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()) {
+        try (var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10))
+                .cookieHandler(new java.net.CookieManager()).build()) {
+            if (method.equals("POST") && type.equals("application/x-www-form-urlencoded")) {
+                var page = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/settings"))
+                    .GET().build(), HttpResponse.BodyHandlers.ofString());
+                body = (new String(body, StandardCharsets.UTF_8) + "&_csrf=" + CsrfTestSupport.token(page.body()))
+                    .getBytes(StandardCharsets.UTF_8);
+            }
             var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
                 .timeout(Duration.ofSeconds(20)).header("Content-Type", type)
                 .method(method, HttpRequest.BodyPublishers.ofByteArray(body)).build();
@@ -41,6 +48,40 @@ class HttpEdgeCaseTests extends SaveProtectionTests {
         assertEquals(200, response.statusCode());
         assertTrue(response.body().contains("手数料の端数処理を選択してください"));
         assertEquals("DOWN", marketplaces.rounding());
+    }
+
+    @Test void realMultipartPhotoRequiresBrowserSessionAndToken() throws Exception {
+        try (var client = HttpClient.newBuilder().cookieHandler(new java.net.CookieManager()).build()) {
+            String base = "http://127.0.0.1:" + port;
+            var page = client.send(HttpRequest.newBuilder(URI.create(base + "/sales/register")).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+            String token = CsrfTestSupport.token(page.body());
+            String boundary = "CsrfPhotoBoundary";
+            var png = new java.io.ByteArrayOutputStream();
+            javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(2, 2,
+                java.awt.image.BufferedImage.TYPE_INT_RGB), "png", png);
+            for (boolean valid : new boolean[]{false, true}) {
+                var body = new java.io.ByteArrayOutputStream();
+                var fields = java.util.Map.of("_csrf", valid ? token : "wrong",
+                    "submissionId", java.util.UUID.randomUUID().toString(), "itemName", "CSRF写真テスト",
+                    "marketplace", "メルカリ", "sellingPrice", "3000", "shippingCost", "100", "soldDate", "2026-10-22");
+                for (var field : fields.entrySet()) {
+                    body.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + field.getKey()
+                        + "\"\r\n\r\n" + field.getValue() + "\r\n").getBytes(StandardCharsets.UTF_8));
+                }
+                body.write(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"test.png\""
+                    + "\r\nContent-Type: image/png\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+                body.write(png.toByteArray());
+                body.write(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
+                var response = client.send(HttpRequest.newBuilder(URI.create(base + "/transactions"))
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray())).build(),
+                    HttpResponse.BodyHandlers.ofString());
+                assertEquals(valid ? 302 : 403, response.statusCode());
+                assertEquals(valid ? 1 : 0, sales.search("", "", null, null).size());
+            }
+            assertNotNull(sales.search("", "", null, null).getFirst().getImagePath());
+        }
     }
 
     @Test void indexingScalarFieldReturnsBadRequest() throws Exception {

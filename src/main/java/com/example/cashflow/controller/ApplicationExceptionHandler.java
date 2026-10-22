@@ -9,6 +9,13 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @ControllerAdvice
 public class ApplicationExceptionHandler {
+    @ExceptionHandler(com.example.cashflow.config.CsrfConfiguration.CsrfRejectedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public String invalidSubmission(Model model) {
+        model.addAttribute("message", "送信を確認できなかったため、保存・変更は行いませんでした。画面を開き直して再度お試しください。入力途中の内容は、下書きがあれば復元できます。写真は選び直してください。");
+        return "error";
+    }
+
     @ExceptionHandler(org.springframework.beans.InvalidPropertyException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String invalidField(Model model) {

@@ -179,7 +179,9 @@ MyBatisのMapperとSQLアノテーションでDBを操作する。
 - セッション追跡はCookieのみとし、初回POST後のURLにjsessionidを付けない。demoでは転送ヘッダーを解釈してHTTPSプロキシ配下のリダイレクトを維持する。
 - ログイン・ユーザー情報・認証・所有者確認・ユーザー別データ分離は行わない。
 - Spring Securityは使用しない。
-- CSRFトークンの発行・フォームへの埋め込み・検証は行わない。CsrfConfigurationは設けない。
+- `CsrfConfiguration`は32バイトの暗号学的乱数によるトークンをHTTPセッションに保持する。`RequestDataValueProcessor`で更新系Thymeleafフォームに`_csrf`を自動挿入する。GETフォームには挿入せず、トークンを含む画面は`Cache-Control: no-store`とする。
+- 全MVC経路に登録したInterceptorでGET・HEAD・OPTIONS・TRACE以外を検証する。multipart解析後、Controllerのバインド・保存処理前に照合し、欠落・不一致・セッション切れ・複数値は403の日本語エラー画面で拒否する。容量超過は従来のアップロード例外処理が先に処理し、保存しない。multipartの一時領域消費・大量送信そのものを防ぐ機能ではない。
+- トークンは同じセッションの複数タブで共有し、正常送信後も使用できる。再送ID・版番号とは別の目的であり、それらの検証も継続する。CSRFトークンをlocalStorageやURLへ出力しない。ログイン・アクセス制御は追加しない。
 - 登録・更新・削除はPOST。入力検証、HTMLのエスケープ、CSVの文字列処理は行う。
 
 ## 画像
@@ -215,7 +217,7 @@ ShippingTemplateTestsで管理CRUD、入力値保持、0円・上限・合計上
 DashboardReportTestsで前月比較の年またぎ・平均の丸め・0件・うるう日・4〜6週のカレンダー・日別合算・大きな利益を確認する。DemoApplicationTestsでは月指定のダッシュボード描画・日別検索リンク・年月の境界と不正入力も検証する。
 
 JUnitとMockMvc、MySQL互換モードのH2を使用する。
-ログイン・CSRFトークンなしでの画面表示と登録・編集・削除・設定保存、入力検証、計算、集計、検索、CSV、画像処理を確認する。
+ログインなしでの画面表示と、正規画面から取得したCSRFトークン・セッションを使った登録・編集・削除・設定保存、入力検証、計算、集計、検索、CSV、画像処理を確認する。CSRF専用テストではトークン欠落・不一致・別セッション・期限切れ・複数値の拒否と、通常送信・複数タブ・GET閲覧の動作を検証する。
 実利用中のMySQLには接続しない。
 
 DemoApplicationTestsはdemoプロファイルをランダムポートで起動し、サンプルの投入、主要9画面、共有デモ案内、CSV、初期設定なしのCRUD、ヘルスチェックの正常・異常応答を確認する。実HTTPで初回POST後のHTTPSリダイレクト・URLへのセッションID非付与・Secure Cookieも検証する。

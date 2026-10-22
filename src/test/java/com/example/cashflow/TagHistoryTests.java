@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
@@ -111,7 +110,7 @@ class TagHistoryTests {
     }
 
     @BeforeEach void setup() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mvc = CsrfTestSupport.mvc(context);
         jdbc.update("DELETE FROM purchases");
         jdbc.update("DELETE FROM transactions");
         jdbc.update("DELETE FROM app_settings");

@@ -43,7 +43,7 @@ class TransactionRegistrationTests {
     MockMvc mvc;
 
     @BeforeEach void setup() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        mvc = CsrfTestSupport.mvc(context);
         jdbc.update("DELETE FROM transactions");
         jdbc.update("DELETE FROM marketplace_settings");
         jdbc.update("DELETE FROM app_settings");
@@ -52,12 +52,13 @@ class TransactionRegistrationTests {
         settings.setVersion(marketplaces.settings().getVersion()); marketplaces.save(settings);
     }
 
-    @Test void registrationFormOpensWithoutLoginOrToken() throws Exception {
-        var result = mvc.perform(get("/sales/register")).andExpect(status().isOk())
+    @Test void registrationFormOpensWithoutLoginAndIssuesCsrfToken() throws Exception {
+        var result = MockMvcBuilders.webAppContextSetup(context).build()
+            .perform(get("/sales/register")).andExpect(status().isOk())
             .andExpect(content().string(containsString("Yahoo!フリマ")))
             .andExpect(content().string(containsString("販売日"))).andReturn();
-        assertFalse(result.getResponse().getContentAsString().contains("name=\"token\""));
-        assertNull(result.getRequest().getSession(false));
+        assertFalse(CsrfTestSupport.token(result.getResponse().getContentAsString()).isBlank());
+        assertNotNull(result.getRequest().getSession(false));
         assertTrue(result.getResponse().getContentAsString().contains("data-rate=\"10.00\""),
             "The browser needs the configured marketplace rate for its live preview");
     }
@@ -88,20 +89,22 @@ class TransactionRegistrationTests {
         mvc.perform(valid("/transactions").param("draftRevision", "revision-new"))
             .andExpect(flash().attribute("savedDraftKey", "sale-new"))
             .andExpect(flash().attribute("savedDraftRevision", "revision-new"));
+        mvc.perform(get("/transactions"))
+            .andExpect(content().string(containsString("data-saved-draft=\"sale-new\"")))
+            .andExpect(content().string(containsString("data-saved-revision=\"revision-new\"")));
         long id = repository.search("", "", null, null).getFirst().getId();
         mvc.perform(get("/transactions/" + id + "/edit"))
             .andExpect(content().string(containsString("data-draft-key=\"sale-" + id + "\"")));
         mvc.perform(valid("/transactions/" + id + "/edit").param("draftRevision", "revision-edit"))
             .andExpect(flash().attribute("savedDraftKey", "sale-" + id))
             .andExpect(flash().attribute("savedDraftRevision", "revision-edit"));
+        mvc.perform(get("/transactions"))
+            .andExpect(content().string(containsString("data-saved-draft=\"sale-" + id + "\"")))
+            .andExpect(content().string(containsString("data-saved-revision=\"revision-edit\"")));
         var failed = mvc.perform(multipart("/transactions").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", "入力中")
             .param("draftRevision", "revision-failed"))
             .andExpect(view().name("transaction-form")).andReturn();
         assertFalse(failed.getFlashMap().containsKey("savedDraftKey"));
-        mvc.perform(get("/transactions").flashAttr("savedDraftKey", "sale-new")
-            .flashAttr("savedDraftRevision", "revision-new"))
-            .andExpect(content().string(containsString("data-saved-draft=\"sale-new\"")))
-            .andExpect(content().string(containsString("data-saved-revision=\"revision-new\"")));
     }
 
     @Test void savesServerCalculatedFeesDatesAndMemoAndRendersList() throws Exception {

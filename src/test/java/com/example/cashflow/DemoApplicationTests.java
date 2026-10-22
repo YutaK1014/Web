@@ -33,7 +33,7 @@ class DemoApplicationTests {
         jdbc.update("UPDATE transactions SET sold_date='2020-01-15', selling_price=100, selling_fee=0, shipping_cost=0, purchase_price=0 WHERE id=1");
         jdbc.update("UPDATE transactions SET sold_date='2020-02-15', selling_price=150, selling_fee=0, shipping_cost=0, purchase_price=0 WHERE id=2");
         jdbc.update("UPDATE transactions SET sold_date='2019-12-15', selling_price=0, selling_fee=0, shipping_cost=100, purchase_price=0 WHERE id=3");
-        var mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        var mvc = CsrfTestSupport.mvc(context);
         mvc.perform(get("/dashboard").param("month", "2020-02"))
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("+50.0%")))
@@ -52,7 +52,7 @@ class DemoApplicationTests {
     }
 
     @Test void dashboardRendersSelectedMonthComparisonCalendarAndDailyLinks() throws Exception {
-        var mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        var mvc = CsrfTestSupport.mvc(context);
         String date = jdbc.queryForObject("SELECT sold_date FROM transactions WHERE id=1", java.sql.Date.class).toString();
         mvc.perform(get("/dashboard").param("month", date.substring(0, 7)))
             .andExpect(status().isOk())
@@ -71,23 +71,32 @@ class DemoApplicationTests {
 
     @Test void firstPostBehindHttpsProxyRedirectsWithoutUrlSessionId() throws Exception {
         try (var client = HttpClient.newHttpClient()) {
+            var page = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/settings"))
+                .header("X-Forwarded-Proto", "https")
+                .header("X-Forwarded-Host", "demo.example.test")
+                .header("X-Forwarded-Port", "443").GET().build(), HttpResponse.BodyHandlers.ofString());
+            String cookie = page.headers().firstValue("Set-Cookie").orElseThrow();
+            assertTrue(cookie.contains("Secure"));
+            assertTrue(cookie.contains("HttpOnly"));
             var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/settings"))
+                .header("Cookie", cookie.split(";", 2)[0])
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("X-Forwarded-Proto", "https")
                 .header("X-Forwarded-Host", "demo.example.test")
                 .header("X-Forwarded-Port", "443")
                 .POST(HttpRequest.BodyPublishers.ofString(
-                    "mercari=10&rakuma=10&yahoo=5&rounding=DOWN&monthlyGoal=10000&version=" + context.getBean(com.example.cashflow.service.MarketplaceService.class).settings().getVersion()))
+                    "mercari=10&rakuma=10&yahoo=5&rounding=DOWN&monthlyGoal=10000&_csrf=" + CsrfTestSupport.token(page.body())
+                    + "&version=" + context.getBean(com.example.cashflow.service.MarketplaceService.class).settings().getVersion()))
                 .build();
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(302, response.statusCode());
             assertEquals("https://demo.example.test/settings", response.headers().firstValue("Location").orElseThrow());
-            assertTrue(response.headers().firstValue("Set-Cookie").orElseThrow().contains("Secure"));
+            assertFalse(response.headers().firstValue("Location").orElseThrow().contains("jsessionid"));
         }
     }
 
     @Test void demoStartsWithSamplesAndAllMainPagesAreAccessible() throws Exception {
-        var mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        var mvc = CsrfTestSupport.mvc(context);
         assertEquals(3, jdbc.queryForObject("SELECT COUNT(*) FROM transactions", Integer.class));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM purchases", Integer.class));
         for (String page : new String[]{"/", "/dashboard", "/transactions", "/sales/register",
@@ -101,7 +110,7 @@ class DemoApplicationTests {
     }
 
     @Test @Transactional void visitorCanCreateEditAndDeleteWithoutInitialSetup() throws Exception {
-        var mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        var mvc = CsrfTestSupport.mvc(context);
         mvc.perform(post("/transactions").param("submissionId", java.util.UUID.randomUUID().toString()).param("itemName", "体験用の本")
             .param("marketplace", "メルカリ").param("sellingPrice", "3000")
             .param("shippingCost", "210").param("purchasePrice", "500")
