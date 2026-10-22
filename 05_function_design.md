@@ -137,7 +137,7 @@ form-draft.jsはsubmissionIdとversionだけをhidden項目の保存対象に追
 - 置換・削除によって不要になった画像はDB確定後に削除する。他の取引が参照する画像は残す。
 - ファイル削除失敗は対象パスをログに記録する。
 - WebP読込にはTwelveMonkeys ImageIOを使用する。
-- multipartの各ファイルは5MB、リクエスト全体は6MBまで。全POST共通の6MB制限は実装しない。MaxUploadSizeExceededExceptionは取引登録画面へリダイレクトし、再入力を案内する。
+- multipartの各ファイルは5MB、リクエスト全体は6MBまで。全POST共通の6MB制限は実装しない。MaxUploadSizeExceededExceptionは、新規売却のPOST `/transactions`なら`/sales/register`、売却編集のPOST `/transactions/{id}/edit`なら同じ編集画面へリダイレクトする。それ以外の送信先ではHTTP 413のエラー画面を返す。容量超過では保存せず、下書きの手動復元または再入力・写真の再選択を案内する。
 
 ## 一覧・検索・集計
 
@@ -188,6 +188,6 @@ form-draft.jsはsubmissionIdとversionだけをhidden項目の保存対象に追
 | 返品費用保存時のDataAccessException | HTTP 503、ログを記録し、返品フォームに再試行を案内 |
 | 購入保存時のDataAccessException | HTTP 503、ログを記録し、入力値を保持したホームの購入フォームに再試行を案内。履歴の再取得も失敗した場合は読み込み失敗を表示し、履歴がないとは表示しない。下書き削除・成功通知は行わない |
 | その他のDataAccessException | 共通ApplicationExceptionHandlerがHTTP 503とerror画面を返す |
-| multipart容量超過 | 登録画面`/sales/register`へリダイレクトし、入力・写真の再選択を案内。編集時も登録画面へ移動する |
+| multipart容量超過 | 新規売却は`/sales/register`、売却編集は同じ`/transactions/{id}/edit`へリダイレクト。未保存・容量上限と、下書きの手動復元または再入力・写真の再選択を案内。それ以外の送信先はHTTP 413のエラー画面 |
 
 下書きの削除通知は保存成功時のみ行う。DB障害時に下書きをサーバーへ退避する処理はない。
