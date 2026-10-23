@@ -189,5 +189,6 @@ form-draft.jsはsubmissionIdとversionだけをhidden項目の保存対象に追
 | 購入保存時のDataAccessException | HTTP 503、ログを記録し、入力値を保持したホームの購入フォームに再試行を案内。履歴の再取得も失敗した場合は読み込み失敗を表示し、履歴がないとは表示しない。下書き削除・成功通知は行わない |
 | その他のDataAccessException | 共通ApplicationExceptionHandlerがHTTP 503とerror画面を返す |
 | multipart容量超過 | 新規売却は`/sales/register`、売却編集は同じ`/transactions/{id}/edit`へリダイレクト。未保存・容量上限と、下書きの手動復元または再入力・写真の再選択を案内。それ以外の送信先はHTTP 413のエラー画面 |
+| multipart解析失敗 | 容量超過以外のMultipartException（boundary欠落など）は保存前にHTTP 400で拒否。「送信形式が正しくないため保存できませんでした。画面を開き直し、写真を選び直してください。」と表示する。本文の再解析はしない。解析できてもCSRFトークンが欠落する場合は従来どおり403 |
 
 下書きの削除通知は保存成功時のみ行う。DB障害時に下書きをサーバーへ退避する処理はない。

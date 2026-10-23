@@ -3,6 +3,7 @@ package com.example.cashflow.controller;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,6 +11,14 @@ import org.springframework.ui.Model;
 
 @ControllerAdvice
 public class UploadExceptionHandler {
+    @ExceptionHandler(MultipartException.class)
+    public String malformedUpload(HttpServletResponse response, Model model) {
+        // Do not read the rejected body again. Capacity errors use the more specific handler below.
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        model.addAttribute("message", "送信形式が正しくないため保存できませんでした。画面を開き直し、写真を選び直してください。");
+        return "error";
+    }
+
     // ファイルの読み取り段階（Controllerを呼ぶ前）の容量超過にも対応する。
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public String uploadTooLarge(HttpServletRequest request, HttpServletResponse response,

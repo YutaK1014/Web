@@ -99,7 +99,7 @@ src/main/resources/
 | DiscountController | 値下げシミュレーションの入力・計算結果・入力エラー表示 |
 | HealthController | GET /healthz。DB疎通成功時200 / UP、失敗時503 / DOWNのJSON応答 |
 | ApplicationExceptionHandler | DB障害・URLパラメーターの型不正に対するエラー表示 |
-| UploadExceptionHandler | アップロード容量超過時の案内と送信元の登録／編集画面へのリダイレクト |
+| UploadExceptionHandler | multipart解析失敗をHTTP 400と日本語案内に変換。容量超過は専用ハンドラーで従来の案内・リダイレクト／413を維持 |
 
 ## Service・Entity
 
