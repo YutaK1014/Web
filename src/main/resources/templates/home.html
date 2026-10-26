@@ -2,7 +2,7 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head}"></head>
 <body><main class=""><nav th:replace="~{fragments :: nav}"></nav>
-<header class="hero"><p class="brand">もうけメモ</p><h1>売った利益が、すぐわかる。</h1>
+<header class="hero"><p class="brand"><button type="button" id="pinball-secret" aria-label="もうけメモ：長押しで秘密のコマンド入力" aria-haspopup="dialog">もうけメモ</button></p><h1>売った利益が、すぐわかる。</h1>
 <p>売却済み商品の売上・手数料・送料・仕入価格を記録して、利益を確認。<br>メルカリ・ラクマ・Yahoo!フリマなどの収支を、ひとつにまとめます。</p>
 <div class="form-actions"><a class="button" th:href="@{/dashboard}">ダッシュボードを開く</a><a th:href="@{/sales/register}">取引を登録する</a></div></header>
 <section class="summary-grid"><div><h2>利益を自動計算</h2><p>手数料や送料を差し引いた金額がわかります。</p></div>
@@ -69,4 +69,54 @@ th:attr="aria-invalid=${#fields.hasErrors('memo')}"></textarea></div>
 <a th:href="@{/purchases/{id}/tags(id=${purchase.id})}">タグを編集</a></td>
 </tr></tbody></table></div>
 </section>
-</main></body></html>
+</main>
+<link rel="stylesheet" th:href="@{/css/pinball.css}">
+<dialog id="pinball-code" aria-labelledby="pinball-code-title">
+<h2 id="pinball-code-title">秘密のコマンド</h2>
+<p>↑ ↑ ↓ ↓ ← → ← → B A の順にタップ</p>
+<p id="pinball-code-progress" role="status">入力：0 / 10</p>
+<div class="pinball-code-buttons">
+<button type="button" data-command="ArrowUp" aria-label="上">↑</button>
+<button type="button" data-command="ArrowDown" aria-label="下">↓</button>
+<button type="button" data-command="ArrowLeft" aria-label="左">←</button>
+<button type="button" data-command="ArrowRight" aria-label="右">→</button>
+<button type="button" data-command="b">B</button>
+<button type="button" data-command="a">A</button>
+</div>
+<button type="button" id="pinball-code-close">閉じる</button>
+<form id="highway-code-form">
+<label for="highway-code-input">別の秘密のコマンド</label>
+<input id="highway-code-input" type="text" maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="PAINKILLER" aria-describedby="highway-code-status">
+<button type="submit">コマンドを実行</button>
+<p id="highway-code-status" role="status"></p>
+</form>
+</dialog>
+<dialog id="pinball" aria-labelledby="pinball-title" aria-describedby="pinball-help">
+<div class="pinball-header"><h2 id="pinball-title">秘密のピンボール</h2><button type="button" id="pinball-back" autofocus>ホームに戻る</button></div>
+<div class="pinball-score">SCORE <output id="pinball-score" aria-label="スコア">0</output><span>時間制限なし</span></div>
+<p id="pinball-help">← → キーでフリッパー ／ Spaceで発射。下のボタンでも操作できます。</p>
+<canvas id="pinball-table" width="420" height="600" tabindex="-1" role="img" aria-label="ピンボール台。バンパーに当てると100点、フリッパーで打ち返すと10点。"></canvas>
+<p id="pinball-status" role="status">発射してスタート！</p>
+<div class="pinball-controls"><button type="button" data-flipper="left" aria-label="左フリッパー">◀ 左</button><button type="button" id="pinball-launch">発射</button><button type="button" data-flipper="right" aria-label="右フリッパー">右 ▶</button></div>
+<p class="pinball-note">落ちても何度でも発射できます。戻るとスコアはリセットされます。Escでも戻れます。</p>
+</dialog>
+<script defer th:src="@{/js/pinball.js}"></script>
+<link rel="stylesheet" th:href="@{/css/highway.css}">
+<dialog id="highway" aria-labelledby="highway-title" aria-describedby="highway-help">
+<header class="highway-header"><div><p class="highway-eyebrow">JAPAN ROUND TRIP</p><h2 id="highway-title">逆走ハイウェイ</h2></div><button type="button" id="highway-back">ホームに戻る</button></header>
+<div class="highway-distance"><div><span>累計走行距離</span><strong id="highway-distance">0 km</strong></div><div><span>次の東京帰還まで</span><strong id="highway-remaining"></strong></div></div>
+<p id="highway-lap">1周目 · 0周完走</p>
+<progress id="highway-progress" value="0" aria-label="日本一周の進捗"></progress>
+<p id="highway-level"></p>
+<p id="highway-next"></p>
+<canvas id="highway-road" width="420" height="560" tabindex="-1" role="img" aria-label="3車線の道路。対向車を左右によけて東京への帰還を目指します。"></canvas>
+<p id="highway-status" role="status">東京から日本一周へ。出発ボタンでスタート。</p>
+<div class="highway-controls"><button type="button" id="highway-left" aria-label="左の車線へ">← 左へ</button><button type="button" id="highway-start">出発</button><button type="button" id="highway-right" aria-label="右の車線へ">右へ →</button></div>
+<button type="button" id="highway-pause" disabled>一時停止</button>
+<p id="highway-help">← → キー／左右ボタンで車線変更。対向車に当たると終了。一周後はLv.14固定でエンドレス。時間制限なし。</p>
+<details><summary>日本一周のルート・通過インター</summary><ol id="highway-route"></ol></details>
+<p class="highway-note">距離・道路の接続はゲーム用です。海上区間も架空の道路でつないでいます。ホームへ戻ると走行記録はリセットされます。</p>
+</dialog>
+<script defer th:src="@{/js/highway-engine.js}"></script>
+<script defer th:src="@{/js/highway.js}"></script>
+</body></html>

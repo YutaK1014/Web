@@ -1,0 +1,33 @@
+#pinball, #pinball-code {
+  box-sizing: border-box;
+  width: min(100% - 20px, 510px);
+  max-height: calc(100dvh - 20px);
+  padding: 18px;
+  overflow: auto;
+  border: 1px solid #59779c;
+  border-radius: 18px;
+  background: #101e33;
+  color: #f0f6ff;
+  box-shadow: 0 20px 90px #0008;
+}
+#pinball::backdrop, #pinball-code::backdrop { background: #07101de0; }
+#pinball-secret { font: inherit; color: inherit; background: transparent; border: 0; padding: 0; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: pan-y; }
+#pinball-code h2 { color: #f0f6ff; }
+#pinball-code button { min-width: 48px; min-height: 48px; border: 1px solid #7c9abb; border-radius: 8px; background: #233e60; color: white; padding: 12px; cursor: pointer; touch-action: manipulation; }
+#pinball-code button:focus-visible, #pinball-secret:focus-visible { outline: 3px solid #ffb84d; outline-offset: 3px; }
+#pinball-code .pinball-code-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+#pinball .pinball-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#pinball h2 { margin: 0; font-size: 1.2rem; color: #f0f6ff; }
+#pinball button { background: #233e60; color: #fff; border: 1px solid #7c9abb; border-radius: 8px; min-height: 44px; padding: 8px 12px; cursor: pointer; }
+#pinball button:focus-visible { outline: 3px solid #ffda78; outline-offset: 3px; }
+#pinball button:disabled { opacity: .5; cursor: default; }
+#pinball .pinball-score { display: flex; align-items: baseline; gap: 12px; margin-top: 14px; color: #67e8db; }
+#pinball-score { font-size: 2rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+#pinball .pinball-score span { margin-left: auto; font-size: .8rem; color: #c0cee0; }
+#pinball-help, #pinball .pinball-note { font-size: .8rem; color: #c0cee0; margin: 8px 0; }
+#pinball-table { display: block; width: auto; max-width: 100%; height: min(51dvh, 600px); margin: 0 auto; border-radius: 12px; background: #091426; }
+#pinball-status { text-align: center; margin: 8px 0; font-size: .9rem; }
+#pinball .pinball-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+#pinball [data-flipper] { touch-action: none; user-select: none; }
+#pinball [data-flipper][aria-pressed="true"] { background: #136d69; }
+html.pinball-open { overflow: hidden; }
