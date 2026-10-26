@@ -13,10 +13,35 @@ document.getElementById('home').onload = async function () {
     Object.defineProperty(doc, 'hidden', { configurable: true, value: false });
     win.requestAnimationFrame = fn => { callback = fn; return 1; };
     win.cancelAnimationFrame = () => { callback = null; };
-    const script = doc.createElement('script');
-    script.charset = 'utf-8';
-    script.src = new URL('../../main/resources/static/js/pinball.js', location.href);
-    await new Promise((resolve, reject) => { script.onload = resolve; script.onerror = reject; doc.body.append(script); });
+    let screenRewards;
+    for (const name of ['pinball-rewards', 'pinball']) {
+      const script = doc.createElement('script');
+      script.charset = 'utf-8';
+      script.src = new URL(`../../main/resources/static/js/${name}.js`, location.href);
+      await new Promise((resolve, reject) => { script.onload = resolve; script.onerror = reject; doc.body.append(script); });
+      if (name === 'pinball-rewards') {
+        const Original = win.PinballRewards;
+        win.PinballRewards = class extends Original { constructor() { super(); screenRewards = this; } };
+      }
+    }
+    const activeRewards = screenRewards;
+    const rewards = new win.PinballRewards();
+    assert(rewards.hit(true).points === 1000, 'first bumper gives 1000');
+    rewards.hit(true);
+    assert(rewards.hit(true).points === 2000 && rewards.multiplier === 2, 'third combo doubles points');
+    rewards.hit(true); rewards.hit(true);
+    assert(rewards.hit(true).feverStarted && rewards.feverTime === 12 && rewards.multiplier === 6, 'sixth bumper starts double-multiplier fever');
+    for (let i = 0; i < 20; i++) rewards.hit(true);
+    assert(rewards.multiplier === 10 && rewards.hit(false).points === 1000, 'fever multiplier capped at ten including flipper points');
+    rewards.update(4);
+    assert(rewards.combo === 0 && rewards.multiplier === 2 && rewards.feverTime === 8, 'combo expires independently of fever');
+    rewards.update(8);
+    assert(rewards.feverTime === 0 && rewards.multiplier === 1 && rewards.charge === 0, 'fever expires and returns to normal');
+    rewards.hit(true); const keptScore = rewards.score; rewards.drain();
+    assert(rewards.charge === 1 && rewards.combo === 0 && rewards.score === keptScore, 'drain preserves charge and score but ends combo');
+    for (let i = 0; i < 5; i++) rewards.hit(true);
+    assert(rewards.feverTime === 12, 'fever can be earned again');
+    rewards.reset(); assert(rewards.score === 0 && rewards.feverTime === 0 && rewards.charge === 0, 'new game resets rewards');
     const dialog = doc.getElementById('pinball');
     const closeAndWait = (element, action) => new Promise((resolve, reject) => {
       // Keep virtual time advancing while Chrome delivers the queued close event.
@@ -39,10 +64,24 @@ document.getElementById('home').onload = async function () {
     enter();
     assert(dialog.open && doc.activeElement.id === 'pinball-table', 'command opens game');
     assert(doc.getElementById('pinball-score').textContent === '0', 'initial score zero');
+    assert(doc.getElementById('pinball-sound').getAttribute('aria-pressed') === 'false', 'sound is opt in');
+    let audioClosed = 0;
+    const originalAudio = win.AudioContext;
+    win.AudioContext = class { resume() { return Promise.resolve(); } close() { audioClosed++; return Promise.resolve(); } };
+    doc.getElementById('pinball-sound').click();
+    assert(doc.getElementById('pinball-sound').getAttribute('aria-pressed') === 'true', 'sound can be enabled');
+    doc.getElementById('pinball-sound').click();
+    assert(audioClosed === 1, 'muting closes audio context');
+    win.AudioContext = originalAudio;
+    const effects = doc.getElementById('pinball-effects');
+    const initialEffects = effects.getAttribute('aria-pressed'); effects.click();
+    assert(effects.getAttribute('aria-pressed') !== initialEffects, 'effects toggle works');
+    effects.click();
     key(' ', doc.activeElement, { code: 'Space' });
     assert(doc.getElementById('pinball-launch').disabled, 'Space launches');
     advance(30);
     assert(Number(doc.getElementById('pinball-score').textContent.replaceAll(',', '')) > 0, 'bumper scores');
+    assert(doc.getElementById('pinball-charge').value > 0, 'real bumper collision fills fever gauge');
     assert(!doc.getElementById('pinball-launch').disabled, 'drain allows relaunch');
     const score = doc.getElementById('pinball-score').textContent;
     doc.getElementById('pinball-launch').click();
@@ -56,6 +95,11 @@ document.getElementById('home').onload = async function () {
     assert(!dialog.open && !callback, 'return stops animation');
     assert(input.value === 'keep me', 'form preserved');
     enter(); assert(dialog.open && doc.getElementById('pinball-score').textContent === '0', 'reopen resets');
+    for (let i = 0; i < 6; i++) activeRewards.hit(true);
+    advance(.1);
+    assert(dialog.dataset.fever === 'true' && doc.getElementById('pinball-fever').textContent.includes('FEVER'), 'UI displays earned fever');
+    advance(13);
+    assert(dialog.dataset.fever === 'false' && doc.getElementById('pinball-charge').value === 0, 'UI exits fever after timeout');
     await closeAndWait(dialog, () => dialog.close());
     const secret = doc.getElementById('pinball-secret');
     const codeDialog = doc.getElementById('pinball-code');
@@ -83,6 +127,17 @@ document.getElementById('home').onload = async function () {
     assert(doc.getElementById('pinball-code-progress').textContent.includes('0 / 10'), 'closing pad resets command');
     doc.getElementById('pinball-code-close').click();
     document.getElementById('results').textContent = 'ALL PASSED\n' + checks.join('\n');
+    if (new URLSearchParams(location.search).has('preview')) {
+      await wait(100);
+      const css = doc.createElement('link'); css.rel = 'stylesheet';
+      css.href = new URL('../../main/resources/static/css/pinball.css', location.href);
+      await new Promise(resolve => { css.onload = resolve; doc.head.append(css); });
+      document.getElementById('results').hidden = true;
+      document.body.style.margin = '0';
+      this.style.cssText = 'width:375px;height:900px;border:0;display:block';
+      enter(); for (let i = 0; i < 6; i++) activeRewards.hit(true);
+      doc.getElementById('pinball-launch').click(); advance(.3);
+    }
   } catch (error) { document.getElementById('results').textContent = checks.join('\n') + '\nFAIL ' + error.stack; }
 };
 </script>

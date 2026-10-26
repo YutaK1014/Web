@@ -19,7 +19,7 @@ document.getElementById('home').onload = async function () {
       await new Promise((resolve, reject) => { link.onload = resolve; link.onerror = reject; doc.head.append(link); });
     }
     let uiRun;
-    for (const name of ['pinball', 'highway-engine', 'highway']) {
+    for (const name of ['pinball-rewards', 'pinball', 'highway-engine', 'highway']) {
       const script = doc.createElement('script'); script.charset = 'utf-8';
       script.src = new URL(`../../main/resources/static/js/${name}.js`, location.href);
       await new Promise((resolve, reject) => { script.onload = resolve; script.onerror = reject; doc.body.append(script); });

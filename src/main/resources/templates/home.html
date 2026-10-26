@@ -94,12 +94,17 @@ th:attr="aria-invalid=${#fields.hasErrors('memo')}"></textarea></div>
 <dialog id="pinball" aria-labelledby="pinball-title" aria-describedby="pinball-help">
 <div class="pinball-header"><h2 id="pinball-title">秘密のピンボール</h2><button type="button" id="pinball-back" autofocus>ホームに戻る</button></div>
 <div class="pinball-score">SCORE <output id="pinball-score" aria-label="スコア">0</output><span>時間制限なし</span></div>
+<div class="pinball-rewards"><strong id="pinball-combo">READY ×1</strong><span id="pinball-fever">あと6ヒットでFEVER</span></div>
+<progress id="pinball-charge" max="6" value="0" aria-label="フィーバーゲージ"></progress>
 <p id="pinball-help">← → キーでフリッパー ／ Spaceで発射。下のボタンでも操作できます。</p>
-<canvas id="pinball-table" width="420" height="600" tabindex="-1" role="img" aria-label="ピンボール台。バンパーに当てると100点、フリッパーで打ち返すと10点。"></canvas>
+<canvas id="pinball-table" width="420" height="600" tabindex="-1" role="img" aria-label="ピンボール台。バンパー1000点、打ち返し100点にコンボ倍率。6ヒットでフィーバー。"></canvas>
 <p id="pinball-status" role="status">発射してスタート！</p>
 <div class="pinball-controls"><button type="button" data-flipper="left" aria-label="左フリッパー">◀ 左</button><button type="button" id="pinball-launch">発射</button><button type="button" data-flipper="right" aria-label="右フリッパー">右 ▶</button></div>
+<div class="pinball-options"><button type="button" id="pinball-sound" aria-pressed="false">効果音 OFF</button><button type="button" id="pinball-effects" aria-pressed="true">演出 ON</button></div>
+<p class="pinball-note">4秒以内の連続ヒットで最大5倍！ バンパー6ヒットで12秒間FEVER、倍率がさらに2倍。ゲージは落球しても保持。</p>
 <p class="pinball-note">落ちても何度でも発射できます。戻るとスコアはリセットされます。Escでも戻れます。</p>
 </dialog>
+<script defer th:src="@{/js/pinball-rewards.js}"></script>
 <script defer th:src="@{/js/pinball.js}"></script>
 <link rel="stylesheet" th:href="@{/css/highway.css}">
 <dialog id="highway" aria-labelledby="highway-title" aria-describedby="highway-help">

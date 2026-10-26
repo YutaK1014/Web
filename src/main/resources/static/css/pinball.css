@@ -31,3 +31,11 @@
 #pinball [data-flipper] { touch-action: none; user-select: none; }
 #pinball [data-flipper][aria-pressed="true"] { background: #136d69; }
 html.pinball-open { overflow: hidden; }
+#pinball { background: linear-gradient(145deg, #201738, #101e33 60%); border-color: #ad7af0; }
+#pinball .pinball-rewards { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; color: #ffcb70; font-size: .85rem; }
+#pinball-combo { color: #fc91db; }
+#pinball-charge { display: block; width: 100%; height: 9px; margin: 8px 0; accent-color: #f687ce; }
+#pinball[data-fever="true"] { border-color: #ffcf68; }
+#pinball[data-fever="true"] #pinball-combo { color: #ffcf68; }
+#pinball .pinball-options { display: flex; gap: 8px; margin-top: 10px; }
+#pinball .pinball-options button { flex: 1; font-size: .8rem; }
