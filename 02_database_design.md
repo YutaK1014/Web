@@ -1,5 +1,10 @@
 # データベース設計書
 
+## database_identity（2026-10-27追加）
+- `id INT PRIMARY KEY`（固定値1）、`identity_value VARCHAR(36) NOT NULL`（UUID）を持つ独立テーブル。
+- schema.sqlで未作成時に作成・初回投入する。既存行は上書きしないため、通常のアプリ再起動では値を保持し、DB再作成時だけ新しい値となる。既存テーブルのALTERは不要。
+- 売却編集のDB世代照合に使い、localStorageの下書き本文はDBに保存しない。認証用トークンではない。
+
 2026-10-09更新。正本の`src/main/resources/schema.sql`とRepositoryの保存・取得処理に対応する。下書き・月次レポート・前月比の追加によるDBスキーマ変更はない。
 
 個人利用はMySQL 8.0、公開デモはH2のMySQL互換モードを使用する。同一のschema.sqlとMyBatis Mapperを使う。ログイン・ユーザー情報管理は行わず、公開デモのデータは全閲覧者で共有する。

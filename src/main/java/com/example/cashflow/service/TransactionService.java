@@ -52,6 +52,7 @@ public class TransactionService {
         repository.lockById(id);
         Transaction row = repository.findById(id);
         if (row == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "取引が見つかりません。");
+        row.setDatabaseId(repository.databaseId());
         row.setTags(tags.transactionTags(id));
         return row;
     }
@@ -62,6 +63,8 @@ public class TransactionService {
         form.validate(errors);
         if (errors.hasErrors()) throw new IllegalArgumentException(errors.getAllErrors().getFirst().getDefaultMessage());
         Transaction row = id == null ? new Transaction() : get(id);
+        if (id != null && !row.getDatabaseId().equals(form.getDatabaseId()))
+            throw new SaveConflictException("データが初期化されたか、古い下書きのため保存できません。最新の編集画面を開き直し、対象の取引を確認して入力し直してください。");
         if (row.isReturned()) throw new IllegalArgumentException("返品済みの取引は「返品費用を編集」から変更してください。");
         if (id == null) submissions.claim(form.getSubmissionId(), "sale");
         else if (form.getVersion() == null || form.getVersion() != row.getVersion())

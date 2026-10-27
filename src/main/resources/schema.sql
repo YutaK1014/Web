@@ -116,3 +116,11 @@ CREATE TABLE IF NOT EXISTS shipping_template_versions (
     version BIGINT NOT NULL,
     FOREIGN KEY (template_id) REFERENCES shipping_templates(id) ON DELETE CASCADE
 );
+
+-- Stable across application restarts, replaced only when the database is recreated.
+CREATE TABLE IF NOT EXISTS database_identity (
+    id INT NOT NULL PRIMARY KEY,
+    identity_value VARCHAR(36) NOT NULL
+);
+INSERT INTO database_identity(id, identity_value) VALUES(1, UUID())
+ON DUPLICATE KEY UPDATE id=1;

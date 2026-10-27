@@ -93,6 +93,14 @@ document.getElementById('home').onload = async function () {
     advance(180); assert(dialog.open, 'no time limit');
     await closeAndWait(dialog, () => doc.getElementById('pinball-back').click());
     assert(!dialog.open && !callback, 'return stops animation');
+    enter();
+    await closeAndWait(dialog, () => { dialog.close(); enter(); });
+    assert(dialog.open && doc.documentElement.classList.contains('pinball-open') && !!callback,
+      'queued close cannot tear down reopened game');
+    doc.getElementById('pinball-launch').click(); advance(1);
+    assert(Number(doc.getElementById('pinball-score').textContent.replaceAll(',', '')) > 0,
+      'reopened game still advances and scores');
+    await closeAndWait(dialog, () => dialog.close());
     assert(input.value === 'keep me', 'form preserved');
     enter(); assert(dialog.open && doc.getElementById('pinball-score').textContent === '0', 'reopen resets');
     for (let i = 0; i < 6; i++) activeRewards.hit(true);

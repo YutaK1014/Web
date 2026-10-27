@@ -1,5 +1,7 @@
 # Java / Spring Boot設計
 
+2026-10-27：TransactionRepository.databaseId()でdatabase_identityのUUIDを取得し、TransactionService.get→TransactionForm.fromで編集フォームに渡す。saveは版照合・画像保存の前にDB識別子を比較し、欠落・不一致をSaveConflictException（409）とする。form-draft.jsはdatabaseIdを保持し、現在のhidden値と一致しない下書きを復元しない。DatabaseDraftIdentityTestsでID・版再利用、識別子欠落、schema再実行時の保持と正常編集を検証する。ブラウザーテストでDB初期化・旧下書きの復元拒否、ピンボール高速再入場後の画面状態・得点更新を確認する。
+
 ## 逆走ハイウェイ（2026-10-26）
 
 ルート定義の`difficulty`は地方区間の境界から算出し、`Run`は現在のチェックポイントを基に難易度・対向車速度・生成間隔・並走確率を返す。Runのdistanceは累計距離、completedLapsは完走周数、lapDistanceは周内距離を返す。東京帰還で走行状態を止めずチェックポイントを周回先頭へ戻し、対向車・車線位置・出現タイミングを引き継ぐ。2周目以降のdifficultyは14を返す。ブラウザーテストでは全IC境界の直前・到達時、同地方内、再入場、停止・再挑戦、最高難易度までの交通回避、3周連続走行、周回境界の超過距離と対向車の保持、周回表示、再挑戦時の周数・難易度リセットを検証する。

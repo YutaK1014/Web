@@ -195,7 +195,7 @@ class TransactionRegistrationTests {
         mvc.perform(valid("/transactions").file(photo())).andExpect(redirectedUrl("/transactions"));
         var row = repository.search("", "", null, null).getFirst();
         Path oldPhoto = Path.of("target/test-photos", row.getImagePath().substring("/images/".length()));
-        var form = com.example.cashflow.dto.TransactionForm.from(row);
+        var form = com.example.cashflow.dto.TransactionForm.from(service.get(row.getId()));
         form.setPhoto(photo());
         var deletionReachedDatabase = new java.util.concurrent.CountDownLatch(1);
         var deleting = new java.util.concurrent.atomic.AtomicBoolean();

@@ -7,6 +7,7 @@ import lombok.Data;
 
 @Data
 public class Transaction {
+    private String databaseId;
     private long version;
     private long id;
     private String itemName;

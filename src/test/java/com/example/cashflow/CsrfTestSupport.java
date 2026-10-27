@@ -22,7 +22,8 @@ final class CsrfTestSupport {
             String token = token(initial.getResponse().getContentAsString());
             var session = (MockHttpSession) initial.getRequest().getSession(false);
             return MockMvcBuilders.webAppContextSetup(context)
-                .defaultRequest(get("/").session(session).param("_csrf", token)).build();
+                .defaultRequest(get("/").session(session).param("_csrf", token)
+                    .param("databaseId", context.getBean(com.example.cashflow.repository.TransactionRepository.class).databaseId())).build();
         } catch (Exception exception) {
             throw new AssertionError("Unable to open a protected form", exception);
         }

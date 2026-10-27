@@ -151,6 +151,8 @@
     tone(280);
   }
   function open() {
+    // A queued close event may still belong to the previous entry.
+    cancelAnimationFrame(frame);
     previousFocus = codeDialog.open ? secret : document.activeElement;
     if (codeDialog.open) codeDialog.close();
     scrollY = window.scrollY;
@@ -166,6 +168,7 @@
     frame = requestAnimationFrame(tick);
   }
   dialog.addEventListener('close', () => {
+    if (dialog.open) return;
     cancelAnimationFrame(frame);
     stopSound(); sparks = []; popups = []; trail = [];
     clearControls();

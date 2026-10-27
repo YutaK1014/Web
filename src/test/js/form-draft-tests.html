@@ -102,6 +102,24 @@
             await page(`<span data-saved-draft="sale-new" data-saved-revision="${stored('sale-new').revision}"></span>`);
             assert(!stored('sale-new') && stored('purchase-new'), 'wrong key cleared');
         });
+        await test('Database identity persists and rejects reset or legacy drafts without changing current fields', async () => {
+            const editMarkup = identity => markup('sale-1').replace('</form>', `<input type="hidden" name="databaseId" value="${identity}"></form>`);
+            let p = await page(editMarkup('old-db'));
+            input(p, 'itemName', 'old record');
+            assert(stored('sale-1').values.databaseId === 'old-db', 'database identity not saved');
+            p.frame.remove(); p = await page(editMarkup('old-db'));
+            p.doc.querySelector('[data-draft-restore]').click();
+            assert(p.form.elements.itemName.value === 'old record', 'same database draft cannot restore');
+            p.frame.remove(); p = await page(editMarkup('new-db'));
+            p.form.elements.itemName.value = 'unrelated record';
+            p.doc.querySelector('[data-draft-restore]').click();
+            assert(p.form.elements.itemName.value === 'unrelated record' && p.form.elements.databaseId.value === 'new-db', 'reset draft changed unrelated record');
+            assert(p.doc.querySelector('[data-draft-status]').textContent.includes('復元できません'), 'reset draft has no explanation');
+            const legacy = stored('sale-1'); delete legacy.values.databaseId;
+            localStorage.setItem(prefix + 'sale-1', JSON.stringify(legacy));
+            p.doc.querySelector('[data-draft-restore]').click();
+            assert(p.form.elements.itemName.value === 'unrelated record', 'legacy draft attached to current database');
+        });
         await test('Create, purchase and different edit IDs remain independent', async () => {
             for (const key of ['sale-new', 'sale-1', 'sale-2', 'purchase-new']) {
                 const p = await page(markup(key)); input(p, 'itemName', key); p.frame.remove();

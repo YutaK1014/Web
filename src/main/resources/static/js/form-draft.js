@@ -37,7 +37,7 @@
         const fields = Array.from(form.elements).filter(field => field.name &&
             ['INPUT', 'SELECT', 'TEXTAREA'].includes(field.tagName) &&
             (!['hidden', 'file', 'submit', 'button', 'reset', 'password'].includes(field.type) ||
-                (field.type === 'hidden' && ['submissionId', 'version'].includes(field.name))));
+                (field.type === 'hidden' && ['submissionId', 'version', 'databaseId'].includes(field.name))));
         const revision = document.createElement('input');
         revision.type = 'hidden';
         revision.name = 'draftRevision';
@@ -77,6 +77,11 @@
             try {
                 const draft = read(key);
                 if (!draft) { offer(); return; }
+                const databaseId = fields.find(field => field.name === 'databaseId');
+                if (databaseId && (!draft.values.databaseId || draft.values.databaseId !== databaseId.value)) {
+                    status.textContent = 'データが初期化されたか、古い下書きのため復元できません。対象の取引を確認して入力し直してください。';
+                    return;
+                }
                 fields.forEach(field => {
                     // Never attach an old edit draft to the latest database version.
                     if (field.name === 'version' && !Object.hasOwn(draft.values, 'version')) {

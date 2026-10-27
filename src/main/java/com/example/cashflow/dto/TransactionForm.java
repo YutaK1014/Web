@@ -13,6 +13,7 @@ import com.example.cashflow.entity.Transaction;
 public class TransactionForm {
     public static final List<String> PLATFORMS = List.of("メルカリ", "ラクマ", "Yahoo!フリマ", "その他");
     private String submissionId = "";
+    private String databaseId = "";
     private String itemName = "";
     private String sellingPrice = "";
     private String purchasePrice = "";
@@ -73,6 +74,7 @@ public class TransactionForm {
 
     public static TransactionForm from(Transaction row) {
         TransactionForm form = new TransactionForm();
+        form.setDatabaseId(row.getDatabaseId());
         form.setVersion(row.getVersion());
         form.setItemName(row.getItemName());
         form.setMarketplace(row.getMarketplace());

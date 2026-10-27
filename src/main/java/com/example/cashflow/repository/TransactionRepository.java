@@ -7,6 +7,9 @@ import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface TransactionRepository {
+    @Select("SELECT identity_value FROM database_identity WHERE id=1")
+    String databaseId();
+
     default List<Transaction> search(String keyword, String marketplace, LocalDate from, LocalDate to) {
         return searchWithTag(keyword, marketplace, from, to, "");
     }
