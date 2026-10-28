@@ -1,0 +1,38 @@
+﻿Target: https://mouke-memo-demo.onrender.com; Run: render-test-01341f516f; UTC: 2026-10-28T02:29:14
+PASS: Health and database UP
+PASS: GET / renders HTML
+PASS: GET /sales/register renders HTML
+PASS: GET /transactions renders HTML
+PASS: GET /dashboard renders HTML
+PASS: GET /dashboard?month=2026-09 renders HTML
+PASS: GET /reports renders HTML
+PASS: GET /reports/monthly?month=2026-10 renders HTML
+PASS: GET /reports/monthly?month=2000-01 renders HTML
+PASS: GET /settings renders HTML
+PASS: GET /settings/shipping-templates renders HTML
+PASS: GET /discount-simulator renders HTML
+PASS: Asset /css/transactions.css
+PASS: Asset /js/theme.js
+PASS: Asset /js/form-draft.js
+PASS: Asset /css/pinball.css
+PASS: Asset /js/pinball-rewards.js
+PASS: Asset /js/pinball.js
+PASS: Asset /css/highway.css
+PASS: Asset /js/highway-engine.js
+PASS: Asset /js/highway.js
+PASS: Empty item name rejected
+PASS: Sale registration
+PASS: Search locates created sale
+PASS: CSV profit 200 and tag
+PASS: Tag and month filter
+PASS: Other month excludes sale
+PASS: Sale edit
+PASS: Edited CSV profit 1100
+PASS: Discount calculation result and current profit
+PASS: Return cost stays -300 (save 1)
+PASS: Return cost stays -300 (save 2)
+PASS: Shipping template create total 250
+PASS: Edited template available to sale form with total 350
+PASS: Cleanup /transactions/4
+PASS: Cleanup /settings/shipping-templates/1
+NOT TESTED: browser JavaScript, drafts, visual/mobile layout, PDF rendering, image upload, purchase writes, settings writes, restart behavior.

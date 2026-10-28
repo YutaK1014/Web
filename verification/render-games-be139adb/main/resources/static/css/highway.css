@@ -1,0 +1,32 @@
+#highway { box-sizing: border-box; width: min(100% - 20px, 540px); max-height: calc(100dvh - 20px); overflow: auto; padding: 18px; border: 1px solid #526d83; border-radius: 18px; color: #eef6ff; background: #101c2c; box-shadow: 0 20px 90px #0008; }
+#highway::backdrop { background: #060e1be8; }
+#highway .highway-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#highway h2 { color: #fff; font-size: 1.4rem; margin: 0; }
+#highway .highway-eyebrow { color: #87dac7; font-size: .65rem; letter-spacing: .16em; margin: 0 0 5px; }
+#highway button { color: #f4f8ff; background: #243c53; border: 1px solid #7e9bb3; border-radius: 8px; min-height: 44px; padding: 8px 12px; touch-action: manipulation; }
+#highway button:disabled { opacity: .45; cursor: default; }
+#highway button:focus-visible { outline: 3px solid #ffcf73; outline-offset: 2px; }
+#highway .highway-distance { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; }
+#highway .highway-distance span { display: block; font-size: .75rem; color: #b2c3d8; }
+#highway .highway-distance strong { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+#highway-distance { color: #83f1c9; }
+#highway-progress { width: 100%; height: 8px; accent-color: #83f1c9; }
+#highway-next { font-size: .85rem; margin: 7px 0; }
+#highway-level { font-size: .8rem; color: #ffcf73; margin: 7px 0; }
+#highway-lap { font-size: .85rem; color: #83f1c9; margin: 7px 0; }
+#highway .highway-distance > div { min-width: 0; overflow-wrap: anywhere; }
+#highway-road { display: block; width: auto; max-width: 100%; height: min(46dvh, 560px); margin: auto; background: #152d30; border-radius: 12px; }
+#highway-status { min-height: 2.8em; font-size: .85rem; margin: 8px 0; }
+#highway .highway-controls { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; }
+#highway-start { background: #195e52 !important; }
+#highway-pause { width: 100%; margin-top: 8px; }
+#highway-help, #highway .highway-note { font-size: .75rem; color: #b2c3d8; }
+#highway details { font-size: .85rem; margin-top: 12px; }
+#highway-route { max-height: 160px; overflow: auto; padding-left: 28px; }
+#highway-route li { padding: 3px; color: #9bafc4; }
+#highway-route li[data-passed="true"] { color: #83f1c9; }
+#highway-route li[aria-current="step"] { font-weight: bold; color: #fff; }
+#highway-code-form { margin-top: 16px; border-top: 1px solid #526d83; padding-top: 16px; }
+#highway-code-form label { display: block; margin-bottom: 8px; }
+#highway-code-input { box-sizing: border-box; width: 100%; min-height: 44px; margin-bottom: 8px; }
+html.highway-open { overflow: hidden; }

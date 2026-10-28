@@ -1,0 +1,29 @@
+﻿PASS first bumper gives 1000
+PASS third combo doubles points
+PASS sixth bumper starts double-multiplier fever
+PASS fever multiplier capped at ten including flipper points
+PASS combo expires independently of fever
+PASS fever expires and returns to normal
+PASS drain preserves charge and score but ends combo
+PASS fever can be earned again
+PASS new game resets rewards
+PASS initially hidden
+PASS form typing ignored
+PASS wrong command rejected
+PASS command opens game
+PASS initial score zero
+PASS sound is opt in
+PASS sound can be enabled
+PASS muting closes audio context
+PASS effects toggle works
+PASS Space launches
+PASS bumper scores
+PASS real bumper collision fills fever gauge
+PASS drain allows relaunch
+PASS relaunch preserves score
+PASS flipper responds
+PASS blur releases controls
+PASS no time limit
+PASS return stops animation
+FAIL Error: close event timed out
+    at file:///C:/src/sotugyou/verification/render-games-be139adb/test/js/pinball-tests.html:49:71

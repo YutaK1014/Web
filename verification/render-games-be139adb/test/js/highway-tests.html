@@ -1,0 +1,159 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Highway game browser tests</title>
+<pre id="results">RUNNING</pre>
+<iframe id="home" src="../../main/resources/templates/home.html" style="width:375px;height:812px"></iframe>
+<script>
+document.getElementById('home').onload = async function () {
+  const win = this.contentWindow, doc = win.document, checks = [];
+  const assert = (condition, name) => { if (!condition) throw Error(name); checks.push('PASS ' + name); };
+  try {
+    Object.defineProperty(doc, 'hidden', { configurable: true, value: false });
+    let callback, time = 100;
+    const browserFrame = win.requestAnimationFrame.bind(win);
+    win.requestAnimationFrame = fn => { callback = fn; return 1; };
+    win.cancelAnimationFrame = () => { callback = null; };
+    for (const name of ['pinball', 'highway']) {
+      const link = doc.createElement('link'); link.rel = 'stylesheet';
+      link.href = new URL(`../../main/resources/static/css/${name}.css`, location.href);
+      await new Promise((resolve, reject) => { link.onload = resolve; link.onerror = reject; doc.head.append(link); });
+    }
+    let uiRun;
+    for (const name of ['pinball-rewards', 'pinball', 'highway-engine', 'highway']) {
+      const script = doc.createElement('script'); script.charset = 'utf-8';
+      script.src = new URL(`../../main/resources/static/js/${name}.js`, location.href);
+      await new Promise((resolve, reject) => { script.onload = resolve; script.onerror = reject; doc.body.append(script); });
+      if (name === 'highway-engine') {
+        const original = win.HighwayGame;
+        win.HighwayGame = { ...original, Run: class extends original.Run { constructor(...args) { super(...args); uiRun = this; } } };
+      }
+    }
+    const screenRun = uiRun;
+    const { Run, route } = win.HighwayGame;
+    const total = route.at(-1).km;
+    let seed = 17;
+    const random = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    const model = new Run(random);
+    assert(route[0].name === '東京IC' && route.at(-1).name === '東京IC', 'Tokyo start and finish');
+    assert(['北海道','四国','九州','沖縄'].every(region => route.some(stop => stop.region === region)), 'major islands included');
+    assert(route.every((stop, index) => !index || stop.km > route[index - 1].km), 'route distances increase');
+    const probe = new Run(() => .5);
+    let expectedLevel = 1;
+    for (let index = 1; index < route.length; index++) {
+      probe.start(); probe.checkpoint = index - 1; probe.distance = route[index].km - .04;
+      probe.spawnIn = 100;
+      const before = { level: probe.difficulty, speed: probe.trafficSpeed, interval: probe.spawnInterval, density: probe.doubleCarChance };
+      probe.update(.004);
+      assert(probe.difficulty === before.level, `no early level increase before ${route[index].name}`);
+      probe.update(.004);
+      const transition = index < route.length - 1 && route[index].region !== route[index - 1].region;
+      if (transition) expectedLevel++;
+      assert(probe.difficulty === expectedLevel, `regional difficulty at checkpoint ${index}`);
+      assert(transition
+        ? probe.trafficSpeed > before.speed && probe.spawnInterval < before.interval && probe.doubleCarChance > before.density
+        : probe.trafficSpeed === before.speed && probe.spawnInterval === before.interval && probe.doubleCarChance === before.density,
+        `traffic changes only on regional transition ${index}`);
+      assert(probe.trafficSpeed * probe.spawnInterval > 380, 'traffic waves retain room for lane changes');
+      probe.pause(); probe.update(.1);
+      assert(probe.difficulty === expectedLevel, 'pause preserves difficulty');
+    }
+    probe.start(); assert(probe.difficulty === 1, 'retry resets difficulty');
+    model.start(); model.move(-1); model.move(-1); model.update(.1);
+    assert(model.lane === 0 && model.x >= 110, 'left lane boundary');
+    model.move(1); model.move(1); model.move(1);
+    assert(model.lane === 2, 'right lane boundary');
+    model.pause(); const saved = model.distance; model.update(.1); model.move(-1);
+    assert(model.distance === saved && model.lane === 2, 'pause freezes distance and input');
+    model.resume(); model.update(.1); assert(model.distance > saved, 'resume advances');
+    model.start(); model.cars = [{ x: 210, y: 459 }]; model.update(.01);
+    assert(model.phase === 'crashed' && model.distance === 0, 'collision ends run before distance advance');
+    model.update(.1); assert(model.distance === 0, 'crash stops progress');
+    model.start(); assert(model.cars.length === 0 && model.checkpoint === 0, 'retry resets cars and route');
+    model.distance = total - .02; model.cars = [{ x: 210, y: 459 }]; model.update(.01);
+    assert(model.phase === 'crashed', 'collision at goal takes precedence over clear');
+    model.start();
+    let iterations = 0, waves = 0, previousCount = 0;
+    let endlessDifficultyStable = true;
+    while (model.phase === 'running' && model.completedLaps < 3 && iterations++ < total * 30) {
+      const hazards = model.cars.filter(car => car.y >= 150 && car.y <= 530);
+      const safe = [0,1,2].find(lane => !hazards.some(car => car.x === [110,210,310][lane]));
+      if (hazards.length && safe !== undefined) model.move(Math.sign(safe - model.lane));
+      model.update(1 / 60);
+      if (model.completedLaps > 0 && model.difficulty !== 14) endlessDifficultyStable = false;
+      if (model.cars.length > previousCount) waves++;
+      previousCount = model.cars.length;
+    }
+    assert(model.phase === 'running' && model.completedLaps === 3 && model.distance >= total * 3 && model.checkpoint === 0, 'three full laps stay playable and continue past Tokyo');
+    assert(endlessDifficultyStable, 'all later regional transitions keep level 14');
+    assert(waves > 100, 'full trip encounters traffic throughout');
+    const completedDistance = model.distance;
+    model.update(.1); assert(model.distance > completedDistance, 'distance keeps increasing after lap completion');
+    model.pause(); const pausedLapDistance = model.distance; model.update(.1);
+    assert(model.distance === pausedLapDistance && model.completedLaps === 3 && model.difficulty === 14, 'endless pause preserves lap and difficulty');
+    model.resume(); model.cars = [{ x: model.x, y: 460 }]; model.update(.001);
+    assert(model.phase === 'crashed' && model.distance === pausedLapDistance && model.completedLaps === 3, 'endless collision preserves total distance and laps');
+    model.start(); assert(model.distance === 0 && model.completedLaps === 0 && model.difficulty === 1, 'retry resets endless progress');
+    model.distance = total - .02; model.checkpoint = route.length - 2; model.spawnIn = .5;
+    const carriedCar = { x: 110, y: 100 }; model.cars = [carriedCar]; model.update(.01);
+    assert(model.completedLaps === 1 && Math.abs(model.lapDistance - .06) < .000001, 'lap boundary retains overflow distance');
+    assert(model.cars.includes(carriedCar) && carriedCar.y > 100 && model.spawnIn < .5 && model.lane === 1, 'lap boundary preserves traffic, timer and player lane');
+
+    const game = doc.getElementById('highway'), pinball = doc.getElementById('pinball');
+    const code = doc.getElementById('pinball-code');
+    const key = (value, target = doc.body) => target.dispatchEvent(new win.KeyboardEvent('keydown', { key: value, bubbles: true, cancelable: true }));
+    const type = (value, target = doc.body) => [...value].forEach(letter => key(letter, target));
+    const advance = seconds => { for (let i = 0; i < seconds * 60; i++) { const fn = callback; callback = null; time += 1000 / 60; if (fn) fn(time); } };
+    const close = element => new Promise((resolve, reject) => {
+      const pulse = setInterval(() => {}, 10);
+      const timeout = setTimeout(() => { clearInterval(pulse); reject(Error('close timeout')); }, 1500);
+      element.addEventListener('close', () => { clearInterval(pulse); clearTimeout(timeout); resolve(); }, { once: true });
+      element.close();
+      browserFrame(() => {});
+    });
+    const purchase = doc.getElementById('purchase-item'); purchase.value = 'keep this'; purchase.focus();
+    type('PAINKILLER', purchase); assert(!game.open, 'purchase typing ignored'); purchase.blur();
+    type('PAINXKILLER'); assert(!game.open, 'wrong command ignored');
+    type('pAiNkIlLeR'); assert(game.open && !pinball.open, 'case-insensitive keyboard command opens highway only');
+    assert(doc.getElementById('highway-level').textContent.includes('Lv.1'), 'UI displays initial difficulty');
+    assert(game.getBoundingClientRect().width <= 375 && game.scrollWidth <= game.clientWidth, 'game fits mobile width');
+    const konami = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+    konami.forEach(value => key(value)); assert(!pinball.open, 'pinball cannot open inside highway');
+    doc.getElementById('highway-start').click(); advance(1.1);
+    assert(doc.getElementById('highway-distance').textContent !== '0 km', 'UI shows distance after start');
+    screenRun.distance = total - .02; screenRun.checkpoint = route.length - 2;
+    screenRun.cars = []; screenRun.spawnIn = 100; advance(.05);
+    assert(doc.getElementById('highway-lap').textContent === '2周目 · 1周完走', 'UI shows second lap and completed lap count');
+    assert(doc.getElementById('highway-level').textContent.includes('Lv.14 固定') && doc.getElementById('highway-status').textContent.includes('日本一周クリア'), 'UI announces clear and endless level 14');
+    assert(doc.getElementById('highway-next').textContent.includes('宇都宮IC') && doc.getElementById('highway-progress').value < 1, 'UI resets route progress for next lap');
+    assert(doc.getElementById('highway-distance').textContent === total.toLocaleString('ja-JP') + ' km', 'UI preserves cumulative distance');
+    assert(doc.querySelectorAll('#highway-route [data-passed="true"]').length === 1, 'route list resets to Tokyo for new lap');
+    doc.getElementById('highway-pause').click();
+    const pausedDistance = doc.getElementById('highway-distance').textContent; advance(10);
+    assert(doc.getElementById('highway-distance').textContent === pausedDistance, 'UI pause freezes run');
+    doc.getElementById('highway-pause').click(); win.dispatchEvent(new win.Event('blur'));
+    assert(doc.getElementById('highway-pause').textContent === '再開', 'blur pauses until explicit resume');
+    await close(game); assert(!callback && purchase.value === 'keep this', 'return stops animation and preserves home');
+    doc.getElementById('pinball-secret').click();
+    const input = doc.getElementById('highway-code-input');
+    const form = doc.getElementById('highway-code-form');
+    const submit = () => form.dispatchEvent(new win.Event('submit', { bubbles: true, cancelable: true }));
+    input.value = 'wrong'; submit(); assert(!game.open && code.open, 'wrong mobile command stays in panel');
+    input.value = ' painkiller '; submit(); assert(game.open && !code.open, 'mobile text command opens game');
+    assert(doc.getElementById('highway-distance').textContent === '0 km', 'reopen resets distance');
+    await close(game);
+    assert(doc.activeElement.id === 'pinball-secret', 'mobile return restores logo focus');
+    konami.forEach(value => key(value)); assert(pinball.open, 'original pinball command still works');
+    type('PAINKILLER'); assert(!game.open, 'highway cannot open inside pinball');
+    pinball.close();
+    assert(!pinball.open, 'pinball can still close');
+    document.getElementById('results').textContent = 'ALL PASSED\n' + checks.join('\n');
+    if (new URLSearchParams(location.search).has('preview')) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      document.getElementById('results').hidden = true;
+      document.body.style.margin = '0';
+      this.style.cssText = 'width:375px;max-width:100%;height:850px;border:0;display:block';
+      type('PAINKILLER'); doc.getElementById('highway-start').click(); advance(1.5);
+    }
+  } catch (error) { document.getElementById('results').textContent = checks.join('\n') + '\nFAIL ' + error.stack; }
+};
+</script>

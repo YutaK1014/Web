@@ -1,0 +1,274 @@
+﻿ALL PASSED
+PASS Tokyo start and finish
+PASS major islands included
+PASS route distances increase
+PASS no early level increase before 宇都宮IC
+PASS regional difficulty at checkpoint 1
+PASS traffic changes only on regional transition 1
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 仙台宮城IC
+PASS regional difficulty at checkpoint 2
+PASS traffic changes only on regional transition 2
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 盛岡IC
+PASS regional difficulty at checkpoint 3
+PASS traffic changes only on regional transition 3
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 青森IC
+PASS regional difficulty at checkpoint 4
+PASS traffic changes only on regional transition 4
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 大沼公園IC
+PASS regional difficulty at checkpoint 5
+PASS traffic changes only on regional transition 5
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 札幌南IC
+PASS regional difficulty at checkpoint 6
+PASS traffic changes only on regional transition 6
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 旭川鷹栖IC
+PASS regional difficulty at checkpoint 7
+PASS traffic changes only on regional transition 7
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 帯広音更IC
+PASS regional difficulty at checkpoint 8
+PASS traffic changes only on regional transition 8
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 苫小牧東IC
+PASS regional difficulty at checkpoint 9
+PASS traffic changes only on regional transition 9
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 八戸IC
+PASS regional difficulty at checkpoint 10
+PASS traffic changes only on regional transition 10
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 秋田中央IC
+PASS regional difficulty at checkpoint 11
+PASS traffic changes only on regional transition 11
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 新潟中央IC
+PASS regional difficulty at checkpoint 12
+PASS traffic changes only on regional transition 12
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 富山IC
+PASS regional difficulty at checkpoint 13
+PASS traffic changes only on regional transition 13
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 金沢東IC
+PASS regional difficulty at checkpoint 14
+PASS traffic changes only on regional transition 14
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 京都南IC
+PASS regional difficulty at checkpoint 15
+PASS traffic changes only on regional transition 15
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 吹田IC
+PASS regional difficulty at checkpoint 16
+PASS traffic changes only on regional transition 16
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 松原IC
+PASS regional difficulty at checkpoint 17
+PASS traffic changes only on regional transition 17
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 郡山IC
+PASS regional difficulty at checkpoint 18
+PASS traffic changes only on regional transition 18
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 天理IC
+PASS regional difficulty at checkpoint 19
+PASS traffic changes only on regional transition 19
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 和歌山IC
+PASS regional difficulty at checkpoint 20
+PASS traffic changes only on regional transition 20
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 南紀田辺IC
+PASS regional difficulty at checkpoint 21
+PASS traffic changes only on regional transition 21
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 神戸西IC
+PASS regional difficulty at checkpoint 22
+PASS traffic changes only on regional transition 22
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 徳島IC
+PASS regional difficulty at checkpoint 23
+PASS traffic changes only on regional transition 23
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 高松中央IC
+PASS regional difficulty at checkpoint 24
+PASS traffic changes only on regional transition 24
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 高知IC
+PASS regional difficulty at checkpoint 25
+PASS traffic changes only on regional transition 25
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 松山IC
+PASS regional difficulty at checkpoint 26
+PASS traffic changes only on regional transition 26
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 広島IC
+PASS regional difficulty at checkpoint 27
+PASS traffic changes only on regional transition 27
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 下関IC
+PASS regional difficulty at checkpoint 28
+PASS traffic changes only on regional transition 28
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 福岡IC
+PASS regional difficulty at checkpoint 29
+PASS traffic changes only on regional transition 29
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 長崎IC
+PASS regional difficulty at checkpoint 30
+PASS traffic changes only on regional transition 30
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 熊本IC
+PASS regional difficulty at checkpoint 31
+PASS traffic changes only on regional transition 31
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 鹿児島IC
+PASS regional difficulty at checkpoint 32
+PASS traffic changes only on regional transition 32
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 那覇IC
+PASS regional difficulty at checkpoint 33
+PASS traffic changes only on regional transition 33
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 許田IC
+PASS regional difficulty at checkpoint 34
+PASS traffic changes only on regional transition 34
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 宮崎IC
+PASS regional difficulty at checkpoint 35
+PASS traffic changes only on regional transition 35
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 大分IC
+PASS regional difficulty at checkpoint 36
+PASS traffic changes only on regional transition 36
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 門司IC
+PASS regional difficulty at checkpoint 37
+PASS traffic changes only on regional transition 37
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 岡山IC
+PASS regional difficulty at checkpoint 38
+PASS traffic changes only on regional transition 38
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 大津IC
+PASS regional difficulty at checkpoint 39
+PASS traffic changes only on regional transition 39
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 彦根IC
+PASS regional difficulty at checkpoint 40
+PASS traffic changes only on regional transition 40
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 米原IC
+PASS regional difficulty at checkpoint 41
+PASS traffic changes only on regional transition 41
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 名古屋IC
+PASS regional difficulty at checkpoint 42
+PASS traffic changes only on regional transition 42
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 浜松IC
+PASS regional difficulty at checkpoint 43
+PASS traffic changes only on regional transition 43
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 静岡IC
+PASS regional difficulty at checkpoint 44
+PASS traffic changes only on regional transition 44
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 御殿場IC
+PASS regional difficulty at checkpoint 45
+PASS traffic changes only on regional transition 45
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS no early level increase before 東京IC
+PASS regional difficulty at checkpoint 46
+PASS traffic changes only on regional transition 46
+PASS traffic waves retain room for lane changes
+PASS pause preserves difficulty
+PASS retry resets difficulty
+PASS left lane boundary
+PASS right lane boundary
+PASS pause freezes distance and input
+PASS resume advances
+PASS collision ends run before distance advance
+PASS crash stops progress
+PASS retry resets cars and route
+PASS collision at goal takes precedence over clear
+PASS three full laps stay playable and continue past Tokyo
+PASS all later regional transitions keep level 14
+PASS full trip encounters traffic throughout
+PASS distance keeps increasing after lap completion
+PASS endless pause preserves lap and difficulty
+PASS endless collision preserves total distance and laps
+PASS retry resets endless progress
+PASS lap boundary retains overflow distance
+PASS lap boundary preserves traffic, timer and player lane
+PASS purchase typing ignored
+PASS wrong command ignored
+PASS case-insensitive keyboard command opens highway only
+PASS UI displays initial difficulty
+PASS game fits mobile width
+PASS pinball cannot open inside highway
+PASS UI shows distance after start
+PASS UI shows second lap and completed lap count
+PASS UI announces clear and endless level 14
+PASS UI resets route progress for next lap
+PASS UI preserves cumulative distance
+PASS route list resets to Tokyo for new lap
+PASS UI pause freezes run
+PASS blur pauses until explicit resume
+PASS return stops animation and preserves home
+PASS wrong mobile command stays in panel
+PASS mobile text command opens game
+PASS reopen resets distance
+PASS mobile return restores logo focus
+PASS original pinball command still works
+PASS highway cannot open inside pinball
+PASS pinball can still close
