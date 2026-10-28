@@ -1,0 +1,47 @@
+<!doctype html><meta charset="utf-8"><pre id="results">RUNNING</pre>
+<iframe src="home.html" id="game"></iframe>
+<script>
+document.getElementById('game').onload = async function () {
+  const win = this.contentWindow, doc = win.document, checks = [];
+  const assert = (value, name) => { if (!value) throw Error(name); checks.push('PASS ' + name); };
+  try {
+    win.requestAnimationFrame = () => 1; win.cancelAnimationFrame = () => {};
+    for (const name of ['pinball-rewards', 'pinball']) {
+      const script = doc.createElement('script'); script.src = name + '.js';
+      await new Promise((resolve, reject) => { script.onload = resolve; script.onerror = reject; doc.body.append(script); });
+    }
+    const t = win.__tableTest;
+    const place = (x,y,vx,vy) => t.ball({x,y,vx,vy,active:true});
+    t.open(); t.launch();
+    assert(t.state().saveTime === 5, 'launch gives five-second save');
+    place(200,625,0,100); t.update(1/240);
+    assert(t.state().ball.active && t.state().ball.y === 350 && !t.state().saveAvailable, 'first early drain auto-relaunches once');
+    place(200,625,0,100); t.update(1/240);
+    assert(!t.state().ball.active && !doc.getElementById('pinball-launch').disabled, 'second drain requires launch');
+    t.launch(); const vx = t.state().ball.vx;
+    for(let i=0;i<1201;i++) t.update(1/240);
+    place(200,625,0,100); t.update(1/240);
+    assert(!t.state().ball.active, 'save expires after five seconds');
+    t.launch(); assert(t.state().ball.vx !== vx, 'consecutive launches vary direction');
+    place(130,146,0,30); t.update(1/240);
+    assert(t.state().ball.vy < -400, 'slow bumper contact gets powered rebound');
+    place(73,351,-100,0); t.update(1/240);
+    assert(t.state().ball.vx === 340 && t.state().ball.vy === -530, 'left kicker shoots upward and inward');
+    place(347,351,100,0); t.update(1/240);
+    assert(t.state().ball.vx === -340 && t.state().ball.vy === -530, 'right kicker shoots upward and inward');
+    t.targetsReset(); const before=t.state().score;
+    for (const x of [100,210,320]) { place(x,114,0,100); t.update(1/240); }
+    assert(t.state().targets.every(x=>!x.lit), 'completed bank resets for next jackpot');
+    assert(t.state().score-before >= 8000 && doc.getElementById('pinball-status').textContent.includes('JACKPOT'), 'three distinct targets pay jackpot');
+    place(100,114,0,100); t.update(.3); // clear cooldown, then approach again
+    place(100,114,0,100); t.update(1/240);
+    const bank=t.state().targets.map(x=>x.lit).join();
+    t.expireSave(); place(200,625,0,100); t.update(1/240);
+    assert(t.state().targets.map(x=>x.lit).join()===bank, 'drain preserves target progress');
+    doc.getElementById('pinball').close(); t.open();
+    assert(t.state().score===0 && t.state().targets.every(x=>!x.lit), 'new game resets score and bank');
+    t.draw(); assert(true,'new table renders without exceptions');
+    document.getElementById('results').textContent='ALL PASSED\n'+checks.join('\n');
+  } catch(e) { document.getElementById('results').textContent=checks.join('\n')+'\nFAIL '+e.stack; }
+};
+</script>

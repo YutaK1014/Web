@@ -66,6 +66,9 @@
   const progress = document.getElementById('pinball-code-progress');
   let entered = [], ball, frame = 0, lastTime = 0, accumulator = 0;
   let previousFocus, scrollY = 0;
+  let saveTime = 0, saveAvailable = false, launchCount = 0;
+  const targets = [100, 210, 320].map(x => ({ x, y: 126, lit: false, cooldown: 0 }));
+  const kickers = [{ x: 65, y: 355, direction: 1, cooldown: 0 }, { x: 355, y: 355, direction: -1, cooldown: 0 }];
   const keys = new Set();
   const pointers = new Map();
   const bumpers = [{ x: 130, y: 180, r: 27 }, { x: 290, y: 180, r: 27 }, { x: 210, y: 290, r: 32 }];
@@ -144,10 +147,12 @@
   function launch() {
     if (!dialog.open || ball.active) return;
     ball.active = true;
-    ball.vx = -180;
-    ball.vy = -690;
+    // Small, repeatable variations prevent every launch following the same path.
+    ball.vx = -170 - (launchCount++ % 3) * 17;
+    ball.vy = -710;
+    saveTime = 5; saveAvailable = true;
     launchButton.disabled = true;
-    status.textContent = '連続ヒットで倍率アップ！ 6ヒットでFEVER！';
+    status.textContent = '5秒間BALL SAVE！ 上の3ターゲットを揃えてボーナス！';
     tone(280);
   }
   function open() {
@@ -157,6 +162,9 @@
     if (codeDialog.open) codeDialog.close();
     scrollY = window.scrollY;
     rewards.reset(); sparks = []; popups = []; trail = []; refreshRewards();
+    targets.forEach(target => { target.lit = false; target.cooldown = 0; });
+    kickers.forEach(kicker => { kicker.cooldown = 0; });
+    saveTime = 0; saveAvailable = false; launchCount = 0;
     clearControls();
     ready();
     status.textContent = '発射してスタート！';
@@ -247,6 +255,9 @@
     return collide(x1 + t * dx, y1 + t * dy, radius, -omega * t * dy, omega * t * dx);
   }
   function update(dt) {
+    saveTime = Math.max(0, saveTime - dt);
+    targets.forEach(target => { target.cooldown = Math.max(0, target.cooldown - dt); });
+    kickers.forEach(kicker => { kicker.cooldown = Math.max(0, kicker.cooldown - dt); });
     const wasFever = rewards.feverTime > 0;
     rewards.update(dt);
     if (wasFever && rewards.feverTime === 0) status.textContent = 'FEVER終了！ 6ヒットで再突入を狙おう！';
@@ -262,8 +273,39 @@
       if (ball.y < 24) { ball.y = 24; ball.vy = Math.abs(ball.vy) * .9; }
       bumpers.forEach(bumper => {
         if (collide(bumper.x, bumper.y, bumper.r, 0, 0, 1.12)) {
+          // A powered bumper adds a real outward impulse even on a slow contact.
+          const dx = ball.x - bumper.x, dy = ball.y - bumper.y;
+          const length = Math.hypot(dx, dy);
+          const outward = (ball.vx * dx + ball.vy * dy) / length;
+          const boost = Math.max(0, 460 - outward);
+          ball.vx += dx / length * boost; ball.vy += dy / length * boost;
           hit(true, bumper.x, bumper.y);
           bumper.glow = .16;
+        }
+      });
+      targets.forEach(target => {
+        if (segment(target.x - 22, target.y, target.x + 22, target.y, 5) && target.cooldown === 0) {
+          target.cooldown = .2;
+          if (!target.lit) {
+            target.lit = true;
+            hit(true, target.x, target.y);
+            if (targets.every(item => item.lit)) {
+              const bonus = 5000 * rewards.multiplier;
+              rewards.score += bonus;
+              if (effects) popups.push({ x: 210, y: 235, text: 'JACKPOT +' + bonus, life: 1.5, color: '#ffdc73' });
+              targets.forEach(item => { item.lit = false; });
+              status.textContent = '3ターゲット達成！ JACKPOT +' + bonus;
+              tone(1040);
+            } else status.textContent = 'ターゲット ' + targets.filter(item => item.lit).length + ' / 3！';
+          }
+        }
+      });
+      kickers.forEach(kicker => {
+        if (segment(kicker.x - kicker.direction * 20, kicker.y - 30, kicker.x + kicker.direction * 20, kicker.y + 35, 7) && kicker.cooldown === 0) {
+          kicker.cooldown = .18;
+          ball.vx = kicker.direction * 340;
+          ball.vy = -530;
+          hit(false, kicker.x, kicker.y);
         }
       });
       rails.forEach(rail => segment(...rail, 6));
@@ -281,9 +323,17 @@
     const speed = Math.hypot(ball.vx, ball.vy);
     if (speed > 950) { ball.vx *= 950 / speed; ball.vy *= 950 / speed; }
     if (ball.y > 620) {
+      if (saveAvailable && saveTime > 0) {
+        // One rescue per launch; it never renews its own protection window.
+        saveAvailable = false; saveTime = 0; trail = [];
+        ball = { x: 365, y: 350, vx: -200, vy: -710, active: true };
+        status.textContent = 'BALL SAVED！ 自動で再発射！';
+        tone(660);
+        return;
+      }
       rewards.drain(); trail = [];
       ready();
-      status.textContent = 'もう一度発射！ スコアはそのまま続けられます。';
+      status.textContent = 'もう一度発射！ スコアと点灯したターゲットは継続。';
     }
   }
   function line(x1, y1, x2, y2, width, color) {
@@ -300,6 +350,16 @@
     line(16, 590, 16, 16, 4, '#4a7797'); line(16, 16, 404, 16, 4, '#4a7797'); line(404, 16, 404, 590, 4, '#4a7797');
     ctx.textAlign = 'center'; ctx.font = 'bold 25px sans-serif'; ctx.fillStyle = rewards.feverTime > 0 ? '#ffdc73' : '#fb8cdd'; ctx.fillText(rewards.feverTime > 0 ? 'FEVER RUSH ×' + rewards.multiplier : 'NEON PINBALL', 210, 77);
     ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#a7e9f2'; ctx.fillText(rewards.combo > 0 ? `${rewards.combo} COMBO · ×${rewards.multiplier}` : 'HIT IT. LIGHT IT UP.', 210, 105);
+    targets.forEach((target, index) => {
+      line(target.x - 22, target.y, target.x + 22, target.y, 10, target.lit ? '#ffdc73' : '#475875');
+      ctx.font = 'bold 11px sans-serif'; ctx.fillStyle = target.lit ? '#ffdc73' : '#94a8c9';
+      ctx.fillText(target.lit ? 'LIT' : String(index + 1), target.x, target.y - 12);
+    });
+    kickers.forEach(kicker => {
+      const active = kicker.cooldown > 0;
+      line(kicker.x - kicker.direction * 20, kicker.y - 30, kicker.x + kicker.direction * 20, kicker.y + 35, 14, active ? '#fff3b0' : '#ed79bf');
+      line(kicker.x - kicker.direction * 20, kicker.y - 30, kicker.x + kicker.direction * 20, kicker.y + 35, 5, '#fff2fc');
+    });
     bumpers.forEach(bumper => {
       circle(bumper.x, bumper.y, bumper.r + 6, '#245c68');
       circle(bumper.x, bumper.y, bumper.r, bumper.glow > 0 ? '#fff3b0' : '#67e8db');
@@ -311,7 +371,8 @@
       line(flipper.x, flipper.y, flipper.x + Math.cos(flipper.angle) * 86, flipper.y + Math.sin(flipper.angle) * 86, 18, '#ffcc70');
       circle(flipper.x, flipper.y, 5, '#94582f');
     });
-    ctx.font = '13px sans-serif'; ctx.fillStyle = '#9ab0ca'; ctx.fillText('KEEP THE BALL ALIVE', 210, 575);
+    ctx.font = 'bold 13px sans-serif'; ctx.fillStyle = saveAvailable && saveTime > 0 ? '#67e8db' : '#9ab0ca';
+    ctx.fillText(saveAvailable && saveTime > 0 ? 'BALL SAVE · ' + Math.ceil(saveTime) + 's' : '3 TARGETS = JACKPOT', 210, 575);
     if (effects && ball.active) {
       trail.push({ x: ball.x, y: ball.y }); trail = trail.slice(-12);
       trail.forEach((p, i) => { ctx.globalAlpha = i / 24; circle(p.x, p.y, 3 + i / 3, '#83edff'); });

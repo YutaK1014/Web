@@ -101,7 +101,8 @@ th:attr="aria-invalid=${#fields.hasErrors('memo')}"></textarea></div>
 <p id="pinball-status" role="status">発射してスタート！</p>
 <div class="pinball-controls"><button type="button" data-flipper="left" aria-label="左フリッパー">◀ 左</button><button type="button" id="pinball-launch">発射</button><button type="button" data-flipper="right" aria-label="右フリッパー">右 ▶</button></div>
 <div class="pinball-options"><button type="button" id="pinball-sound" aria-pressed="false">効果音 OFF</button><button type="button" id="pinball-effects" aria-pressed="true">演出 ON</button></div>
-<p class="pinball-note">4秒以内の連続ヒットで最大5倍！ バンパー6ヒットで12秒間FEVER、倍率がさらに2倍。ゲージは落球しても保持。</p>
+<p class="pinball-note">上の3ターゲットを揃えると5,000点×倍率のJACKPOT！ ピンクのキッカーが横から打ち返します。発射後5秒間は1回だけ自動救済。</p>
+<p class="pinball-note">4秒以内の連続ヒットで最大5倍！ バンパー・新しいターゲットの6ヒットで12秒間FEVER、倍率がさらに2倍。ゲージは落球しても保持。</p>
 <p class="pinball-note">落ちても何度でも発射できます。戻るとスコアはリセットされます。Escでも戻れます。</p>
 </dialog>
 <script defer th:src="@{/js/pinball-rewards.js}"></script>
