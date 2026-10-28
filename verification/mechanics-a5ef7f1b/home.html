@@ -1,0 +1,128 @@
+﻿<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head}"></head>
+<body><main class=""><nav th:replace="~{fragments :: nav}"></nav>
+<header class="hero"><p class="brand"><button type="button" id="pinball-secret" aria-label="もうけメモ：長押しで秘密のコマンド入力" aria-haspopup="dialog">もうけメモ</button></p><h1>売った利益が、すぐわかる。</h1>
+<p>売却済み商品の売上・手数料・送料・仕入価格を記録して、利益を確認。<br>メルカリ・ラクマ・Yahoo!フリマなどの収支を、ひとつにまとめます。</p>
+<div class="form-actions"><a class="button" th:href="@{/dashboard}">ダッシュボードを開く</a><a th:href="@{/sales/register}">取引を登録する</a></div></header>
+<section class="summary-grid"><div><h2>利益を自動計算</h2><p>手数料や送料を差し引いた金額がわかります。</p></div>
+<div><h2>収支を振り返る</h2><p>月別・年間・サイト別に集計できます。</p></div>
+<div><h2>商品を探す</h2><p>商品名や販売日で、過去の取引を絞り込めます。</p></div></section>
+<p>初めて使うときは、<a th:href="@{/settings}">設定</a>で手数料率と端数処理を選択してください。</p>
+<section id="purchase-history" aria-labelledby="purchase-heading">
+<h2 id="purchase-heading">購入履歴</h2>
+<p>購入したものを記録して、あとから振り返れます。</p>
+<p class="hint">購入履歴は売却取引と別に保存され、利益集計には反映されません。</p>
+<p th:if="${successMessage}" th:text="${successMessage}" class="success" role="status"></p>
+<form class="transaction-form" th:action="@{/purchases}" th:object="${purchaseForm}" method="post" data-draft-key="purchase-new">
+<input type="hidden" th:field="*{submissionId}">
+<section th:replace="~{fragments :: draft}"></section>
+<h3>購入したものを登録</h3>
+<div th:if="${#fields.hasErrors('*')}" class="error" role="alert"><p>購入履歴を登録できませんでした。</p>
+<ul><li th:each="error : ${#fields.errors('*')}" th:text="${error}"></li></ul></div>
+<div class="filter-grid">
+<div class="field"><label for="purchase-item">商品名<span class="required">必須</span></label>
+<input id="purchase-item" th:field="*{itemName}" required maxlength="100" placeholder="例：スニーカー"
+th:errorclass="invalid" th:attr="aria-invalid=${#fields.hasErrors('itemName')}"></div>
+<div class="field"><label for="purchase-date">購入日<span class="required">必須</span></label>
+<input id="purchase-date" type="date" th:field="*{purchasedDate}" required min="1000-01-01" max="9999-12-31"
+th:attr="aria-invalid=${#fields.hasErrors('purchasedDate')}"></div>
+<div class="field"><label for="purchase-amount">購入金額（円）<span class="required">必須</span></label>
+<input id="purchase-amount" th:field="*{amount}" inputmode="numeric" pattern="[0-9]{1,10}" maxlength="10" required placeholder="例：3000"
+th:attr="aria-invalid=${#fields.hasErrors('amount')}"></div>
+<div class="field"><label for="purchase-store">購入先<span class="optional">任意</span></label>
+<input id="purchase-store" th:field="*{store}" maxlength="100" placeholder="例：メルカリ・店舗名"
+th:attr="aria-invalid=${#fields.hasErrors('store')}"></div>
+</div>
+<div class="field"><label for="purchase-memo">メモ<span class="optional">任意</span></label>
+<textarea id="purchase-memo" th:field="*{memo}" rows="3" maxlength="10000"
+th:attr="aria-invalid=${#fields.hasErrors('memo')}"></textarea></div>
+<div class="field"><label for="purchase-tags">タグ<span class="optional">任意</span></label>
+<input id="purchase-tags" th:field="*{tags}" maxlength="1000" placeholder="例：衣類, プレゼント" aria-describedby="purchase-tag-hint">
+<p id="purchase-tag-hint" class="hint">カンマまたは「、」で区切って入力。1つ30文字以内、10個まで。</p></div>
+<button class="button" type="submit">購入履歴を登録する</button>
+</form>
+<h3>これまでの購入</h3>
+<form class="filters" method="get" th:action="@{/#purchase-history}" th:object="${purchaseFilter}">
+<div class="error" role="alert" th:if="${#fields.hasAnyErrors()}"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
+<div class="filter-grid">
+<label>検索期間<select th:field="*{period}"><option value="">全期間・日付で指定</option><option value="1month">1か月以内</option><option value="3months">3か月以内</option><option value="custom">期間指定</option></select></label>
+<label>開始日<input type="date" th:field="*{from}" min="1000-01-01" max="9999-12-31"></label>
+<label>終了日<input type="date" th:field="*{to}" min="1000-01-01" max="9999-12-31"></label></div>
+<p class="hint">1か月以内・3か月以内は、今日からさかのぼって今日までの購入日で検索します。この場合、開始日・終了日は使いません。期間指定では開始日と終了日を入力してください（両日を含みます）。</p>
+<label for="purchase-tag-search">タグで検索（完全一致）</label>
+<input id="purchase-tag-search" type="search" name="tag" th:value="${tag}" maxlength="30" placeholder="例：衣類">
+<div class="form-actions"><button class="button" type="submit">検索・絞り込み</button><a th:href="@{/#purchase-history}">条件をクリア</a></div>
+</form>
+<p th:if="${purchaseHistoryUnavailable == true}" class="error" role="alert">購入履歴を読み込めませんでした。入力内容は上のフォームに保持しています。しばらく待ってから再度お試しください。</p>
+<p th:if="${purchaseHistoryUnavailable != true and #lists.isEmpty(purchases)}" class="empty" th:text="${#strings.isEmpty(tag) and #strings.isEmpty(purchaseFilter.period) and #strings.isEmpty(purchaseFilter.from) and #strings.isEmpty(purchaseFilter.to) ? '購入履歴はまだありません。購入したものを上のフォームから登録しましょう。' : '該当する購入履歴はありません。検索条件を変更するか、条件をクリアしてください。'}"></p>
+<div th:unless="${#lists.isEmpty(purchases)}" class="table-container" tabindex="0" aria-label="購入履歴一覧">
+<table><caption>購入日の新しい順に表示しています。</caption>
+<thead><tr><th scope="col">購入日</th><th scope="col">商品名</th><th scope="col">購入金額</th><th scope="col">購入先</th><th scope="col">メモ</th><th scope="col">タグ</th></tr></thead>
+<tbody><tr th:each="purchase : ${purchases}">
+<td class="nowrap" th:text="${purchase.purchasedDate}"></td>
+<th scope="row" class="item-name" th:text="${purchase.itemName}"></th>
+<td class="amount" th:text="${#numbers.formatInteger(purchase.amount,1,'COMMA') + '円'}"></td>
+<td class="item-name" th:text="${#strings.isEmpty(purchase.store) ? '—' : purchase.store}"></td>
+<td class="item-name" th:text="${#strings.isEmpty(purchase.memo) ? '—' : purchase.memo}"></td>
+<td class="item-name"><div class="tag-list"><a class="tag" th:each="label : ${purchase.tags}" th:text="${label}" th:href="@{/(tag=${label},period=${purchaseFilter.period},from=${purchaseFilter.from},to=${purchaseFilter.to})} + '#purchase-history'"></a></div>
+<a th:href="@{/purchases/{id}/tags(id=${purchase.id})}">タグを編集</a></td>
+</tr></tbody></table></div>
+</section>
+</main>
+<link rel="stylesheet" th:href="@{/css/pinball.css}">
+<dialog id="pinball-code" aria-labelledby="pinball-code-title">
+<h2 id="pinball-code-title">秘密のコマンド</h2>
+<p>↑ ↑ ↓ ↓ ← → ← → B A の順にタップ</p>
+<p id="pinball-code-progress" role="status">入力：0 / 10</p>
+<div class="pinball-code-buttons">
+<button type="button" data-command="ArrowUp" aria-label="上">↑</button>
+<button type="button" data-command="ArrowDown" aria-label="下">↓</button>
+<button type="button" data-command="ArrowLeft" aria-label="左">←</button>
+<button type="button" data-command="ArrowRight" aria-label="右">→</button>
+<button type="button" data-command="b">B</button>
+<button type="button" data-command="a">A</button>
+</div>
+<button type="button" id="pinball-code-close">閉じる</button>
+<form id="highway-code-form">
+<label for="highway-code-input">別の秘密のコマンド</label>
+<input id="highway-code-input" type="text" maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="PAINKILLER" aria-describedby="highway-code-status">
+<button type="submit">コマンドを実行</button>
+<p id="highway-code-status" role="status"></p>
+</form>
+</dialog>
+<dialog id="pinball" aria-labelledby="pinball-title" aria-describedby="pinball-help">
+<div class="pinball-header"><h2 id="pinball-title">秘密のピンボール</h2><button type="button" id="pinball-back" autofocus>ホームに戻る</button></div>
+<div class="pinball-score">SCORE <output id="pinball-score" aria-label="スコア">0</output><span>時間制限なし</span></div>
+<div class="pinball-rewards"><strong id="pinball-combo">READY ×1</strong><span id="pinball-fever">あと6ヒットでFEVER</span></div>
+<progress id="pinball-charge" max="6" value="0" aria-label="フィーバーゲージ"></progress>
+<p id="pinball-help">← → キーでフリッパー ／ Spaceで発射。下のボタンでも操作できます。</p>
+<canvas id="pinball-table" width="420" height="600" tabindex="-1" role="img" aria-label="ピンボール台。バンパー1000点、打ち返し100点にコンボ倍率。6ヒットでフィーバー。"></canvas>
+<p id="pinball-status" role="status">発射してスタート！</p>
+<div class="pinball-controls"><button type="button" data-flipper="left" aria-label="左フリッパー">◀ 左</button><button type="button" id="pinball-launch">発射</button><button type="button" data-flipper="right" aria-label="右フリッパー">右 ▶</button></div>
+<div class="pinball-options"><button type="button" id="pinball-sound" aria-pressed="false">効果音 OFF</button><button type="button" id="pinball-effects" aria-pressed="true">演出 ON</button></div>
+<p class="pinball-note">上の3ターゲットを揃えると5,000点×倍率のJACKPOT！ ピンクのキッカーが横から打ち返します。発射後5秒間は1回だけ自動救済。</p>
+<p class="pinball-note">4秒以内の連続ヒットで最大5倍！ バンパー・新しいターゲットの6ヒットで12秒間FEVER、倍率がさらに2倍。ゲージは落球しても保持。</p>
+<p class="pinball-note">落ちても何度でも発射できます。戻るとスコアはリセットされます。Escでも戻れます。</p>
+</dialog>
+
+
+<link rel="stylesheet" th:href="@{/css/highway.css}">
+<dialog id="highway" aria-labelledby="highway-title" aria-describedby="highway-help">
+<header class="highway-header"><div><p class="highway-eyebrow">JAPAN ROUND TRIP</p><h2 id="highway-title">逆走ハイウェイ</h2></div><button type="button" id="highway-back">ホームに戻る</button></header>
+<div class="highway-distance"><div><span>累計走行距離</span><strong id="highway-distance">0 km</strong></div><div><span>次の東京帰還まで</span><strong id="highway-remaining"></strong></div></div>
+<p id="highway-lap">1周目 · 0周完走</p>
+<progress id="highway-progress" value="0" aria-label="日本一周の進捗"></progress>
+<p id="highway-level"></p>
+<p id="highway-next"></p>
+<canvas id="highway-road" width="420" height="560" tabindex="-1" role="img" aria-label="3車線の道路。対向車を左右によけて東京への帰還を目指します。"></canvas>
+<p id="highway-status" role="status">東京から日本一周へ。出発ボタンでスタート。</p>
+<div class="highway-controls"><button type="button" id="highway-left" aria-label="左の車線へ">← 左へ</button><button type="button" id="highway-start">出発</button><button type="button" id="highway-right" aria-label="右の車線へ">右へ →</button></div>
+<button type="button" id="highway-pause" disabled>一時停止</button>
+<p id="highway-help">← → キー／左右ボタンで車線変更。対向車に当たると終了。一周後はLv.14固定でエンドレス。時間制限なし。</p>
+<details><summary>日本一周のルート・通過インター</summary><ol id="highway-route"></ol></details>
+<p class="highway-note">距離・道路の接続はゲーム用です。海上区間も架空の道路でつないでいます。ホームへ戻ると走行記録はリセットされます。</p>
+</dialog>
+
+
+</body></html>

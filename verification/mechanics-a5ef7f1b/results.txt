@@ -1,0 +1,14 @@
+﻿ALL PASSED
+PASS launch gives five-second save
+PASS first early drain auto-relaunches once
+PASS second drain requires launch
+PASS save expires after five seconds
+PASS consecutive launches vary direction
+PASS slow bumper contact gets powered rebound
+PASS left kicker shoots upward and inward
+PASS right kicker shoots upward and inward
+PASS completed bank resets for next jackpot
+PASS three distinct targets pay jackpot
+PASS drain preserves target progress
+PASS new game resets score and bank
+PASS new table renders without exceptions
